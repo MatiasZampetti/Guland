@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+
+  <!-- ===== PARED NEGRA ===== -->
+  <rect width="1200" height="800" fill="#0a0a0a"/>
+
+  <!-- Textura ladrillos: líneas horizontales -->
+  <g stroke="#151515" stroke-width="1.5">
+    <line x1="0" y1="44"  x2="1200" y2="44"/>
+    <line x1="0" y1="88"  x2="1200" y2="88"/>
+    <line x1="0" y1="132" x2="1200" y2="132"/>
+    <line x1="0" y1="176" x2="1200" y2="176"/>
+    <line x1="0" y1="220" x2="1200" y2="220"/>
+    <line x1="0" y1="264" x2="1200" y2="264"/>
+    <line x1="0" y1="308" x2="1200" y2="308"/>
+    <line x1="0" y1="352" x2="1200" y2="352"/>
+    <line x1="0" y1="396" x2="1200" y2="396"/>
+    <line x1="0" y1="440" x2="1200" y2="440"/>
+    <line x1="0" y1="484" x2="1200" y2="484"/>
+    <line x1="0" y1="528" x2="1200" y2="528"/>
+    <line x1="0" y1="572" x2="1200" y2="572"/>
+    <line x1="0" y1="616" x2="1200" y2="616"/>
+    <line x1="0" y1="660" x2="1200" y2="660"/>
+    <line x1="0" y1="704" x2="1200" y2="704"/>
+    <line x1="0" y1="748" x2="1200" y2="748"/>
+  </g>
+  <!-- Separadores verticales de ladrillos (alternados) -->
+  <g stroke="#151515" stroke-width="1">
+    <line x1="120" y1="0"   x2="120" y2="44"/>   <line x1="240" y1="0"   x2="240" y2="44"/>   <line x1="360" y1="0"   x2="360" y2="44"/>   <line x1="480" y1="0"   x2="480" y2="44"/>   <line x1="600" y1="0"   x2="600" y2="44"/>   <line x1="720" y1="0"   x2="720" y2="44"/>   <line x1="840" y1="0"   x2="840" y2="44"/>   <line x1="960" y1="0"   x2="960" y2="44"/>   <line x1="1080" y1="0"  x2="1080" y2="44"/>
+    <line x1="60"  y1="44"  x2="60"  y2="88"/>   <line x1="180" y1="44"  x2="180" y2="88"/>   <line x1="300" y1="44"  x2="300" y2="88"/>   <line x1="420" y1="44"  x2="420" y2="88"/>   <line x1="540" y1="44"  x2="540" y2="88"/>   <line x1="660" y1="44"  x2="660" y2="88"/>   <line x1="780" y1="44"  x2="780" y2="88"/>   <line x1="900" y1="44"  x2="900" y2="88"/>   <line x1="1020" y1="44" x2="1020" y2="88"/>  <line x1="1140" y1="44" x2="1140" y2="88"/>
+    <line x1="120" y1="88"  x2="120" y2="132"/>  <line x1="240" y1="88"  x2="240" y2="132"/>  <line x1="360" y1="88"  x2="360" y2="132"/>  <line x1="480" y1="88"  x2="480" y2="132"/>  <line x1="600" y1="88"  x2="600" y2="132"/>  <line x1="720" y1="88"  x2="720" y2="132"/>  <line x1="840" y1="88"  x2="840" y2="132"/>  <line x1="960" y1="88"  x2="960" y2="132"/>  <line x1="1080" y1="88" x2="1080" y2="132"/>
+    <line x1="60"  y1="132" x2="60"  y2="176"/>  <line x1="180" y1="132" x2="180" y2="176"/>  <line x1="300" y1="132" x2="300" y2="176"/>  <line x1="420" y1="132" x2="420" y2="176"/>  <line x1="540" y1="132" x2="540" y2="176"/>  <line x1="660" y1="132" x2="660" y2="176"/>  <line x1="780" y1="132" x2="780" y2="176"/>  <line x1="900" y1="132" x2="900" y2="176"/>  <line x1="1020" y1="132" x2="1020" y2="176"/> <line x1="1140" y1="132" x2="1140" y2="176"/>
+    <line x1="120" y1="176" x2="120" y2="220"/>  <line x1="240" y1="176" x2="240" y2="220"/>  <line x1="360" y1="176" x2="360" y2="220"/>  <line x1="480" y1="176" x2="480" y2="220"/>  <line x1="600" y1="176" x2="600" y2="220"/>  <line x1="720" y1="176" x2="720" y2="220"/>  <line x1="840" y1="176" x2="840" y2="220"/>  <line x1="960" y1="176" x2="960" y2="220"/>  <line x1="1080" y1="176" x2="1080" y2="220"/>
+    <line x1="60"  y1="220" x2="60"  y2="264"/>  <line x1="180" y1="220" x2="180" y2="264"/>  <line x1="300" y1="220" x2="300" y2="264"/>  <line x1="420" y1="220" x2="420" y2="264"/>  <line x1="540" y1="220" x2="540" y2="264"/>  <line x1="660" y1="220" x2="660" y2="264"/>  <line x1="780" y1="220" x2="780" y2="264"/>  <line x1="900" y1="220" x2="900" y2="264"/>  <line x1="1020" y1="220" x2="1020" y2="264"/> <line x1="1140" y1="220" x2="1140" y2="264"/>
+    <line x1="120" y1="264" x2="120" y2="308"/>  <line x1="240" y1="264" x2="240" y2="308"/>  <line x1="360" y1="264" x2="360" y2="308"/>  <line x1="480" y1="264" x2="480" y2="308"/>  <line x1="600" y1="264" x2="600" y2="308"/>  <line x1="720" y1="264" x2="720" y2="308"/>  <line x1="840" y1="264" x2="840" y2="308"/>  <line x1="960" y1="264" x2="960" y2="308"/>  <line x1="1080" y1="264" x2="1080" y2="308"/>
+    <line x1="60"  y1="308" x2="60"  y2="352"/>  <line x1="180" y1="308" x2="180" y2="352"/>  <line x1="300" y1="308" x2="300" y2="352"/>  <line x1="420" y1="308" x2="420" y2="352"/>  <line x1="540" y1="308" x2="540" y2="352"/>  <line x1="660" y1="308" x2="660" y2="352"/>  <line x1="780" y1="308" x2="780" y2="352"/>  <line x1="900" y1="308" x2="900" y2="352"/>  <line x1="1020" y1="308" x2="1020" y2="352"/> <line x1="1140" y1="308" x2="1140" y2="352"/>
+  </g>
+
+  <!-- ===== GRAFFITI ===== -->
+
+  <!-- Resplandor rojo ambiental (derecha) -->
+  <ellipse cx="920" cy="420" rx="380" ry="320" fill="#DC2626" opacity="0.05"/>
+
+  <!-- GULAND grande en el fondo — contorno rojo -->
+  <text
+    x="40" y="540"
+    font-family="Impact,'Arial Black',Arial,sans-serif"
+    font-size="260" font-weight="900"
+    fill="#DC2626" opacity="0.13"
+    transform="rotate(-7,40,540)"
+    letter-spacing="-6"
+  >GULAND</text>
+  <!-- contorno blanco encima -->
+  <text
+    x="40" y="540"
+    font-family="Impact,'Arial Black',Arial,sans-serif"
+    font-size="260" font-weight="900"
+    fill="none" stroke="#ffffff" stroke-width="2" opacity="0.08"
+    transform="rotate(-7,40,540)"
+    letter-spacing="-6"
+  >GULAND</text>
+
+  <!-- STREETWEAR tag (blanco, izquierda) -->
+  <text x="95" y="670"
+    font-family="Impact,'Arial Black',Arial,sans-serif"
+    font-size="20" fill="#ffffff" opacity="0.2"
+    transform="rotate(-3,95,670)" letter-spacing="8"
+  >STREETWEAR</text>
+
+  <!-- BAIRES tag (rojo) -->
+  <text x="140" y="480"
+    font-family="Impact,'Arial Black',Arial,sans-serif"
+    font-size="34" fill="#DC2626" opacity="0.45"
+    transform="rotate(-14,140,480)" letter-spacing="3"
+  >BAIRES</text>
+
+  <!-- NO LIMITS tag (blanco pequeño) -->
+  <text x="330" y="340"
+    font-family="Impact,'Arial Black',Arial,sans-serif"
+    font-size="20" fill="#ffffff" opacity="0.18"
+    transform="rotate(9,330,340)" letter-spacing="5"
+  >NO LIMITS</text>
+
+  <!-- Mancha spray roja (izquierda arriba) -->
+  <circle cx="210" cy="235" r="50" fill="#DC2626" opacity="0.22"/>
+  <circle cx="225" cy="222" r="32" fill="#DC2626" opacity="0.18"/>
+  <circle cx="195" cy="255" r="22" fill="#DC2626" opacity="0.15"/>
+  <circle cx="163" cy="205" r="6"  fill="#DC2626" opacity="0.28"/>
+  <circle cx="172" cy="284" r="4"  fill="#DC2626" opacity="0.22"/>
+  <circle cx="256" cy="215" r="5"  fill="#DC2626" opacity="0.2"/>
+  <circle cx="248" cy="270" r="3"  fill="#DC2626" opacity="0.18"/>
+  <circle cx="178" cy="220" r="7"  fill="#DC2626" opacity="0.15"/>
+  <circle cx="242" cy="250" r="4"  fill="#DC2626" opacity="0.2"/>
+  <!-- Gotera roja -->
+  <rect x="203" y="283" width="6" height="95" rx="3" fill="#DC2626" opacity="0.32"/>
+  <ellipse cx="206" cy="381" rx="9" ry="13" fill="#DC2626" opacity="0.28"/>
+  <rect x="228" y="272" width="4" height="62" rx="2" fill="#DC2626" opacity="0.22"/>
+  <ellipse cx="230" cy="336" rx="5" ry="8"  fill="#DC2626" opacity="0.18"/>
+
+  <!-- Mancha spray blanca (centro izquierda) -->
+  <circle cx="460" cy="195" r="30" fill="#ffffff" opacity="0.10"/>
+  <circle cx="445" cy="182" r="18" fill="#ffffff" opacity="0.08"/>
+  <circle cx="475" cy="210" r="12" fill="#ffffff" opacity="0.07"/>
+  <circle cx="492" cy="170" r="5"  fill="#ffffff" opacity="0.12"/>
+  <circle cx="432" cy="215" r="4"  fill="#ffffff" opacity="0.09"/>
+  <!-- Gotera blanca -->
+  <rect x="458" y="223" width="3" height="55" rx="2" fill="#ffffff" opacity="0.1"/>
+  <ellipse cx="459" cy="280" rx="5" ry="7" fill="#ffffff" opacity="0.08"/>
+
+  <!-- Estrella roja (decorativa) -->
+  <g transform="translate(525,315) rotate(18)">
+    <polygon points="0,-24 6,-9 22,-9 10,2 15,18 0,8 -15,18 -10,2 -22,-9 -6,-9"
+             fill="#DC2626" opacity="0.5"/>
+  </g>
+
+  <!-- Flecha blanca -->
+  <g stroke="#ffffff" stroke-width="2.5" fill="none" opacity="0.22" transform="translate(590,445)">
+    <line x1="0" y1="0" x2="52" y2="0"/>
+    <polyline points="40,-11 52,0 40,11"/>
+  </g>
+
+  <!-- Corona (streetwear) -->
+  <g transform="translate(295,468)" fill="#DC2626" opacity="0.38">
+    <path d="M0,22 L0,2 L14,12 L26,0 L38,12 L52,2 L52,22 Z"/>
+  </g>
+
+  <!-- Rayones / scratches en la pared -->
+  <g stroke="#ffffff" stroke-width="1" opacity="0.05">
+    <line x1="620" y1="95"  x2="570" y2="195"/>
+    <line x1="638" y1="90"  x2="588" y2="190"/>
+    <line x1="568" y1="98"  x2="635" y2="195"/>
+  </g>
+
+  <!-- ===== FIGURA (centro-derecha, cx≈880) ===== -->
+
+  <!-- Sombra en el suelo -->
+  <ellipse cx="882" cy="778" rx="155" ry="14" fill="#000000" opacity="0.55"/>
+
+  <!-- === PANTALÓN (oscuro, detrás del buzo) === -->
+  <path d="M 832 618 L 822 752 L 862 752 L 882 672 L 902 752 L 942 752 L 932 618 Z" fill="#131313"/>
+  <line x1="852" y1="630" x2="828" y2="748" stroke="#1c1c1c" stroke-width="1.5" fill="none"/>
+  <line x1="912" y1="630" x2="936" y2="748" stroke="#1c1c1c" stroke-width="1.5" fill="none"/>
+
+  <!-- === ZAPATILLAS === -->
+  <!-- Izquierda (blanca) -->
+  <path d="M 808 748 L 808 760 Q 808 773 820 773 L 872 773 Q 885 773 885 762 L 885 752 Z" fill="#EEEEEE"/>
+  <path d="M 806 766 Q 806 778 820 778 L 872 778 Q 887 778 887 766 Z" fill="#DC2626"/>
+  <line x1="822" y1="757" x2="872" y2="757" stroke="#CCCCCC" stroke-width="1.5"/>
+  <line x1="825" y1="764" x2="869" y2="764" stroke="#CCCCCC" stroke-width="1"/>
+
+  <!-- Derecha (blanca) -->
+  <path d="M 894 752 L 894 760 Q 894 773 906 773 L 958 773 Q 971 773 971 762 L 971 752 Z" fill="#EEEEEE"/>
+  <path d="M 892 766 Q 892 778 906 778 L 958 778 Q 973 778 973 766 Z" fill="#DC2626"/>
+  <line x1="908" y1="757" x2="958" y2="757" stroke="#CCCCCC" stroke-width="1.5"/>
+  <line x1="911" y1="764" x2="955" y2="764" stroke="#CCCCCC" stroke-width="1"/>
+
+  <!-- === BUZO (blanco) === -->
+  <!-- Manga izquierda -->
+  <path d="M 728 275
+           C 692 298 658 342 642 398
+           C 626 454 633 508 644 542
+           L 684 546
+           C 690 514 692 476 706 432
+           C 720 388 748 348 775 318
+           L 790 298 Z" fill="#F3F3F3"/>
+  <!-- Puño izquierdo -->
+  <path d="M 644 536 C 640 552 644 568 650 580 L 686 576 C 692 564 692 550 686 538 Z" fill="#E3E3E3"/>
+
+  <!-- Manga derecha -->
+  <path d="M 1036 275
+           C 1072 298 1106 342 1122 398
+           C 1138 454 1131 508 1120 542
+           L 1080 546
+           C 1074 514 1072 476 1058 432
+           C 1044 388 1016 348 989 318
+           L 974 298 Z" fill="#F3F3F3"/>
+  <!-- Puño derecho -->
+  <path d="M 1120 536 C 1124 552 1120 568 1114 580 L 1078 576 C 1072 564 1072 550 1078 538 Z" fill="#E3E3E3"/>
+
+  <!-- Cuerpo principal del buzo -->
+  <path d="M 728 275
+           C 745 263 772 256 800 253
+           L 882 248
+           L 964 253
+           C 992 256 1019 263 1036 275
+           L 1030 638
+           C 1010 648 962 656 882 656
+           C 802 656 754 648 734 638 Z" fill="#F3F3F3"/>
+
+  <!-- Hood (capucha detrás de la cabeza) -->
+  <path d="M 800 253 C 822 232 852 224 882 222 C 912 224 942 232 964 253 C 944 260 914 264 882 264 C 850 264 820 260 800 253 Z" fill="#E9E9E9"/>
+  <path d="M 830 253 C 852 238 868 233 882 231 C 896 233 912 238 934 253" fill="none" stroke="#DCDCDC" stroke-width="2"/>
+
+  <!-- Bolsillo canguro -->
+  <rect x="822" y="482" width="120" height="126" rx="4" fill="#E8E8E8"/>
+  <line x1="882" y1="482" x2="882" y2="608" stroke="#D8D8D8" stroke-width="1.5"/>
+  <!-- Franja roja del bolsillo -->
+  <rect x="822" y="602" width="120" height="6" rx="2" fill="#DC2626" opacity="0.92"/>
+
+  <!-- Cordones (rojos) -->
+  <path d="M 860 268 C 856 310 850 375 842 482" stroke="#DC2626" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <circle cx="840" cy="485" r="6" fill="#DC2626"/>
+  <path d="M 904 268 C 908 310 914 375 922 482" stroke="#DC2626" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <circle cx="924" cy="485" r="6" fill="#DC2626"/>
+
+  <!-- Costura hombros (línea de puntos) -->
+  <path d="M 778 260 C 820 254 852 250 882 249 C 912 250 944 254 986 260"
+        stroke="#E0E0E0" stroke-width="1" fill="none" stroke-dasharray="5,4" opacity="0.7"/>
+
+  <!-- === CABEZA === -->
+  <ellipse cx="882" cy="185" rx="60" ry="67" fill="#C8926C"/>
+  <!-- Orejas -->
+  <ellipse cx="822" cy="190" rx="12" ry="17" fill="#BE8460"/>
+  <ellipse cx="942" cy="190" rx="12" ry="17" fill="#BE8460"/>
+  <!-- Cejas -->
+  <path d="M 852 168 C 860 163 872 163 878 168" stroke="#5E3318" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M 886 168 C 892 163 904 163 912 168" stroke="#5E3318" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Ojos -->
+  <ellipse cx="865" cy="178" rx="10" ry="7" fill="#2E1A0A"/>
+  <ellipse cx="899" cy="178" rx="10" ry="7" fill="#2E1A0A"/>
+  <circle cx="867" cy="175" r="2.5" fill="#ffffff" opacity="0.65"/>
+  <circle cx="901" cy="175" r="2.5" fill="#ffffff" opacity="0.65"/>
+  <!-- Nariz -->
+  <path d="M 881 192 L 875 210 L 889 210" stroke="#A06040" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+  <!-- Boca -->
+  <path d="M 869 225 C 876 232 888 232 895 225" stroke="#8B3A28" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- === GORRA (negra) === -->
+  <!-- Corona -->
+  <path d="M 824 153
+           C 824 108 850 84 882 82
+           C 914 84 940 108 940 153
+           C 940 172 930 186 914 192
+           C 900 196 864 196 850 192
+           C 834 186 824 172 824 153 Z" fill="#111111"/>
+  <!-- Visera (plana, hacia un costado) -->
+  <path d="M 834 163 C 826 168 804 170 778 168 C 758 166 752 159 756 154 C 768 148 818 150 832 156 Z" fill="#0d0d0d"/>
+  <line x1="756" y1="154" x2="832" y2="158" stroke="#1e1e1e" stroke-width="2"/>
+  <!-- Costura delantera -->
+  <path d="M 848 97 C 864 92 900 92 916 97" stroke="#1e1e1e" stroke-width="1.5" fill="none"/>
+  <!-- Logo GL en la gorra (rojo) -->
+  <text x="882" y="146"
+    font-family="Impact,'Arial Black',Arial,sans-serif"
+    font-size="22" font-weight="900"
+    fill="#DC2626" text-anchor="middle" opacity="0.9"
+  >GL</text>
+  <!-- Botón de la gorra -->
+  <circle cx="882" cy="86" r="5" fill="#1a1a1a" stroke="#282828" stroke-width="1"/>
+
+</svg>
