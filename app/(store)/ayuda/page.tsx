@@ -33,7 +33,7 @@ export default function AyudaPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-5 py-8 sm:py-12">
       <div className="mb-8 sm:mb-12">
-        <AnimatedTitle as="h1" className="text-5xl sm:text-7xl leading-none md:text-9xl" style={{ fontFamily: 'var(--font-bebas)' }}>
+        <AnimatedTitle as="h1" className="text-3xl sm:text-5xl leading-none md:text-9xl" style={{ fontFamily: 'var(--font-bebas)' }}>
           AYUDA
         </AnimatedTitle>
         <p className="mt-2 text-xs font-semibold tracking-widest text-white/40">PREGUNTAS FRECUENTES</p>

@@ -32,7 +32,7 @@ export default function CuentaPage() {
         </h1>
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-white/5 p-6">
+      <div className="rounded-xl border border-white/10 bg-white/5 p-4 sm:p-6">
         <p className="text-xs font-bold tracking-widest text-white/40">DATOS DE LA CUENTA</p>
         <div className="mt-4 space-y-3">
           <div>

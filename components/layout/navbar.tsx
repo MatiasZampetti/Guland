@@ -178,7 +178,7 @@ export function Navbar() {
                 window.scrollTo({ top: 0, behavior: 'smooth' })
               }
             }}
-            className="absolute left-1/2 -translate-x-1/2 text-3xl md:text-5xl leading-none"
+            className="absolute left-1/2 -translate-x-1/2 text-2xl sm:text-3xl md:text-5xl leading-none"
             style={{ fontFamily: 'var(--font-league)', fontWeight: 900 }}
           >
             <span className="text-white">GU</span><span className="text-red-600">-LAND</span>

@@ -25,7 +25,7 @@ export function NewDrop() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4">
           {newProducts.map((product) => (
             <ProductCard key={product.id} product={product} dark />
           ))}

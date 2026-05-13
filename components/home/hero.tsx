@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export function Hero() {
   return (
-    <section id="hero" className="relative -mt-16 h-[100svh] min-h-[600px] overflow-hidden select-none">
+    <section id="hero" className="relative -mt-16 h-[100svh] min-h-[320px] overflow-hidden select-none">
 
       {/* Fondo */}
       <img
@@ -20,34 +20,31 @@ export function Hero() {
       <div className="relative flex h-full flex-col justify-between px-5 py-8 md:px-14">
 
         {/* TEXTO IZQUIERDA */}
-        <div className="mt-auto flex flex-col pb-16 md:pb-10 max-w-3xl">
+        <div className="hero-text-wrap mt-auto flex flex-col pb-16 md:pb-10 max-w-3xl">
 
           {/* CTA New Drops */}
           <Link
             href="/shop?filter=new-drops"
-            className="relative z-10 mb-4 inline-flex w-fit items-center gap-3 border border-red-600 bg-red-700 px-5 py-2 text-xs font-bold tracking-[0.25em] text-white transition-opacity hover:opacity-85 pointer-events-auto"
+            className="hero-ver-ahora relative z-10 mb-4 inline-flex w-fit items-center gap-3 border border-red-600 bg-red-700 px-5 py-2 text-xs font-bold tracking-[0.25em] text-white transition-opacity hover:opacity-85 pointer-events-auto"
           >
-            VER AHORA
+            VER COLECCIÓN
             <span className="text-sm">↓</span>
           </Link>
 
           {/* Headline masivo */}
           <h1
-            className="leading-[0.88] text-white uppercase"
-            style={{
-              fontFamily: 'var(--font-anton)',
-              fontSize: 'clamp(72px, 13vw, 200px)',
-            }}
+            className="hero-h1 leading-[0.88] text-white uppercase"
+            style={{ fontFamily: 'var(--font-anton)' }}
           >
             NEW<br />DROPS
           </h1>
 
-          {/* Gu-land */}
+          {/* Gu-land — oculto en landscape pequeño */}
           <p
-            className="mt-6 text-white"
+            className="hero-guland mt-6 text-white"
             style={{
               fontFamily: 'var(--font-league)',
-              fontSize: 'clamp(32px, 5.5vw, 88px)',
+              fontSize: 'clamp(20px, 5.5vw, 88px)',
               fontWeight: 900,
               lineHeight: 1,
             }}
@@ -55,18 +52,18 @@ export function Hero() {
             Gu-land
           </p>
 
-          {/* Tagline */}
-          <p className="mt-5 max-w-xs text-sm leading-relaxed tracking-wide text-white/55">
+          {/* Tagline — oculta en landscape pequeño */}
+          <p className="hero-tagline mt-5 max-w-xs text-sm leading-relaxed tracking-wide text-white/55">
             Vestí diferente, vestí con Guland.
           </p>
 
-          {/* CTA */}
+          {/* CTA COMPRAR AHORA */}
           <Link
             href="/shop"
-            className="relative z-10 mt-8 inline-flex w-fit items-center gap-6 border border-red-600 bg-red-700 px-8 py-4 text-sm font-bold tracking-[0.25em] text-white transition-opacity hover:opacity-85 pointer-events-auto"
+            className="hero-comprar relative z-10 mt-8 inline-flex w-fit items-center gap-3 sm:gap-6 border border-red-600 bg-red-700 px-4 py-2 sm:px-8 sm:py-4 text-xs sm:text-sm font-bold tracking-[0.2em] sm:tracking-[0.25em] text-white transition-opacity hover:opacity-85 pointer-events-auto"
           >
             COMPRAR AHORA
-            <span className="text-base">→</span>
+            <span className="sm:text-base">→</span>
           </Link>
         </div>
 

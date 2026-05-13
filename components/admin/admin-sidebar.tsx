@@ -18,12 +18,12 @@ export function AdminSidebar() {
   return (
     <aside className="flex h-screen w-14 sm:w-48 md:w-56 shrink-0 flex-col bg-[#111] text-white overflow-hidden">
       {/* Logo */}
-      <div className="border-b border-white/10 px-3 sm:px-6 py-5">
+      <div className="admin-sidebar-logo border-b border-white/10 px-3 sm:px-6 py-5">
         <p className="text-2xl leading-none text-white hidden sm:block" style={{ fontFamily: 'var(--font-bebas)' }}>
           GULAND
         </p>
-        <p className="text-2xl leading-none text-white sm:hidden" style={{ fontFamily: 'var(--font-bebas)' }}>
-          G
+        <p className="text-2xl leading-none sm:hidden flex items-center justify-center" style={{ fontFamily: 'var(--font-bebas)' }}>
+          <span className="text-white">G</span><span className="text-red-600">L</span>
         </p>
         <p className="mt-0.5 text-[10px] tracking-widest text-white/30 hidden sm:block">ADMIN PANEL</p>
       </div>
@@ -38,7 +38,7 @@ export function AdminSidebar() {
                 <Link
                   href={href}
                   title={label}
-                  className={`flex items-center gap-3 rounded-lg px-2 sm:px-3 py-2.5 text-sm transition-colors ${
+                  className={`admin-sidebar-item flex items-center gap-3 rounded-lg px-2 sm:px-3 py-2.5 text-sm transition-colors ${
                     active
                       ? 'bg-white/10 text-white'
                       : 'text-white/50 hover:bg-white/5 hover:text-white'
@@ -54,7 +54,7 @@ export function AdminSidebar() {
       </nav>
 
       {/* Ver tienda */}
-      <div className="border-t border-white/10 p-2 sm:p-3">
+      <div className="admin-sidebar-footer border-t border-white/10 p-2 sm:p-3">
         <Link
           href="/"
           title="Ver tienda"

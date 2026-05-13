@@ -89,30 +89,50 @@ export default function AdminPage() {
             Ver todos →
           </Link>
         </div>
-        <div className="overflow-x-auto">
+        {/* Mobile cards */}
+        <div className="sm:hidden divide-y divide-gray-50">
+          {recentOrders.map((order) => (
+            <div key={order.id} className="px-4 py-3.5 space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-mono text-gray-400">{order.id}</p>
+                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusColor[order.estado]}`}>
+                  {statusLabel[order.estado]}
+                </span>
+              </div>
+              <p className="text-sm font-medium text-gray-900">{order.cliente}</p>
+              <p className="text-xs text-gray-400">{order.email}</p>
+              <div className="flex items-center justify-between gap-2 pt-0.5">
+                <p className="text-xs text-gray-500">{order.fecha}</p>
+                <p className="text-sm font-semibold text-gray-900">${order.total.toLocaleString('es-AR')}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-50">
-                <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">ID</th>
-                <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Cliente</th>
-                <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Fecha</th>
-                <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Total</th>
-                <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Estado</th>
+                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">ID</th>
+                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Cliente</th>
+                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Fecha</th>
+                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Total</th>
+                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Estado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {recentOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50/50">
-                  <td className="px-6 py-3.5 text-xs font-mono font-medium text-gray-900">{order.id}</td>
-                  <td className="px-6 py-3.5">
+                  <td className="px-4 md:px-6 py-3.5 text-xs font-mono font-medium text-gray-900">{order.id}</td>
+                  <td className="px-4 md:px-6 py-3.5">
                     <p className="text-sm font-medium text-gray-900">{order.cliente}</p>
                     <p className="text-xs text-gray-400">{order.email}</p>
                   </td>
-                  <td className="px-6 py-3.5 text-sm text-gray-500">{order.fecha}</td>
-                  <td className="px-6 py-3.5 text-sm font-semibold text-gray-900">
+                  <td className="px-4 md:px-6 py-3.5 text-sm text-gray-500">{order.fecha}</td>
+                  <td className="px-4 md:px-6 py-3.5 text-sm font-semibold text-gray-900">
                     ${order.total.toLocaleString('es-AR')}
                   </td>
-                  <td className="px-6 py-3.5">
+                  <td className="px-4 md:px-6 py-3.5">
                     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusColor[order.estado]}`}>
                       {statusLabel[order.estado]}
                     </span>

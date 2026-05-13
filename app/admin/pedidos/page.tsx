@@ -57,43 +57,67 @@ export default function AdminPedidosPage() {
       </div>
 
       {/* Tabla */}
-      <div className="rounded-xl bg-white shadow-sm overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">ID</th>
-              <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Cliente</th>
-              <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Fecha</th>
-              <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Items</th>
-              <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Total</th>
-              <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Estado</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {filtered.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50/50">
-                <td className="px-6 py-3.5 text-xs font-mono font-semibold text-gray-900">{order.id}</td>
-                <td className="px-6 py-3.5">
-                  <p className="text-sm font-medium text-gray-900">{order.cliente}</p>
-                  <p className="text-xs text-gray-400">{order.email}</p>
-                </td>
-                <td className="px-6 py-3.5 text-sm text-gray-500">{order.fecha}</td>
-                <td className="px-6 py-3.5 text-sm text-gray-600">{order.items}</td>
-                <td className="px-6 py-3.5 text-sm font-semibold text-gray-900">
-                  ${order.total.toLocaleString('es-AR')}
-                </td>
-                <td className="px-6 py-3.5">
-                  <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusColor[order.estado]}`}>
-                    {statusLabel[order.estado]}
-                  </span>
-                </td>
+      <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+        {/* Mobile cards */}
+        <div className="sm:hidden divide-y divide-gray-50">
+          {filtered.map((order) => (
+            <div key={order.id} className="px-4 py-3.5 space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-mono text-gray-400">{order.id}</p>
+                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusColor[order.estado]}`}>
+                  {statusLabel[order.estado]}
+                </span>
+              </div>
+              <p className="text-sm font-medium text-gray-900">{order.cliente}</p>
+              <p className="text-xs text-gray-400">{order.email}</p>
+              <div className="flex items-center justify-between gap-2 pt-0.5">
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span>{order.fecha}</span>
+                  <span>{order.items} items</span>
+                </div>
+                <p className="text-sm font-semibold text-gray-900">${order.total.toLocaleString('es-AR')}</p>
+              </div>
+            </div>
+          ))}
+          {filtered.length === 0 && <div className="py-12 text-center text-sm text-gray-400">No hay pedidos con ese estado.</div>}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">ID</th>
+                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Cliente</th>
+                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Fecha</th>
+                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Items</th>
+                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Total</th>
+                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Estado</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {filtered.length === 0 && (
-          <div className="py-12 text-center text-sm text-gray-400">No hay pedidos con ese estado.</div>
-        )}
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {filtered.map((order) => (
+                <tr key={order.id} className="hover:bg-gray-50/50">
+                  <td className="px-4 md:px-6 py-3.5 text-xs font-mono font-semibold text-gray-900">{order.id}</td>
+                  <td className="px-4 md:px-6 py-3.5">
+                    <p className="text-sm font-medium text-gray-900">{order.cliente}</p>
+                    <p className="text-xs text-gray-400">{order.email}</p>
+                  </td>
+                  <td className="px-4 md:px-6 py-3.5 text-sm text-gray-500">{order.fecha}</td>
+                  <td className="px-4 md:px-6 py-3.5 text-sm text-gray-600">{order.items}</td>
+                  <td className="px-4 md:px-6 py-3.5 text-sm font-semibold text-gray-900">
+                    ${order.total.toLocaleString('es-AR')}
+                  </td>
+                  <td className="px-4 md:px-6 py-3.5">
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusColor[order.estado]}`}>
+                      {statusLabel[order.estado]}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filtered.length === 0 && <div className="py-12 text-center text-sm text-gray-400">No hay pedidos con ese estado.</div>}
+        </div>
       </div>
     </div>
   )
