@@ -20,7 +20,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
           strokeWidth={1.5}
         />
       </button>
-      <div className={`overflow-hidden transition-all duration-300 ${open ? 'max-h-40 pb-5' : 'max-h-0'}`}>
+      <div className={`overflow-hidden transition-all duration-300 ${open ? 'max-h-[600px] pb-5' : 'max-h-0'}`}>
         <p className="text-sm leading-relaxed text-white/50">{a}</p>
       </div>
     </div>
@@ -31,9 +31,9 @@ export default function AyudaPage() {
   const categories = useFaqStore((s) => s.categories)
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
-      <div className="mb-12">
-        <AnimatedTitle as="h1" className="text-7xl leading-none md:text-9xl" style={{ fontFamily: 'var(--font-bebas)' }}>
+    <div className="mx-auto max-w-3xl px-4 sm:px-5 py-8 sm:py-12">
+      <div className="mb-8 sm:mb-12">
+        <AnimatedTitle as="h1" className="text-5xl sm:text-7xl leading-none md:text-9xl" style={{ fontFamily: 'var(--font-bebas)' }}>
           AYUDA
         </AnimatedTitle>
         <p className="mt-2 text-xs font-semibold tracking-widest text-white/40">PREGUNTAS FRECUENTES</p>

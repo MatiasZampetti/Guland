@@ -209,10 +209,10 @@ export default function AdminAyudaPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="p-4 sm:p-6 md:p-8">
+      <div className="mb-6 sm:mb-8 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Preguntas frecuentes</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Preguntas frecuentes</h1>
           <p className="mt-1 text-sm text-gray-500">
             {categories.reduce((n, c) => n + c.items.length, 0)} preguntas en {categories.length} categorías
           </p>

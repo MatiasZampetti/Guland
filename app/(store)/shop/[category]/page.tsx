@@ -70,10 +70,10 @@ export default function CategoryPage({ params }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 md:px-5 py-12">
-      <div className="mb-8 md:mb-10 flex items-end justify-between">
+    <div className="mx-auto max-w-7xl px-4 sm:px-5 py-8 sm:py-12">
+      <div className="mb-6 sm:mb-8 md:mb-10 flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-7xl leading-none md:text-9xl" style={{ fontFamily: 'var(--font-bebas)' }}>
+          <h1 className="text-5xl sm:text-7xl leading-none md:text-9xl" style={{ fontFamily: 'var(--font-bebas)' }}>
             {categoryData.label.toUpperCase()}
           </h1>
           <p className="mt-1 text-xs font-semibold tracking-widest text-white/40">
@@ -83,11 +83,11 @@ export default function CategoryPage({ params }: Props) {
 
         {/* Botón filtros — solo mobile */}
         <Sheet>
-          <SheetTrigger className="md:hidden flex items-center gap-2 rounded border border-white/20 px-3 py-2 text-xs font-semibold tracking-widest text-white/70 hover:border-white hover:text-white transition-colors">
+          <SheetTrigger className="md:hidden shrink-0 flex items-center gap-2 rounded border border-white/20 px-3 py-2 text-xs font-semibold tracking-widest text-white/70 hover:border-white hover:text-white transition-colors min-h-[44px]">
             <SlidersHorizontal className="h-3.5 w-3.5" />
             FILTROS
           </SheetTrigger>
-          <SheetContent side="left" className="bg-[#0a0a0a] border-white/10 text-white w-72 p-6">
+          <SheetContent side="left" className="bg-[#0a0a0a] border-white/10 text-white w-[min(18rem,85vw)] p-6">
             <SheetHeader className="mb-6 p-0">
               <SheetTitle className="text-white text-xs font-bold tracking-widest">FILTROS</SheetTitle>
             </SheetHeader>
@@ -96,7 +96,7 @@ export default function CategoryPage({ params }: Props) {
         </Sheet>
       </div>
 
-      <div className="flex gap-12">
+      <div className="flex gap-8 sm:gap-12">
         {/* Sidebar — solo desktop */}
         <div className="hidden md:block">
           <FiltersSidebar {...sidebarProps} />

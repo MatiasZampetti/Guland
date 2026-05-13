@@ -24,7 +24,7 @@ export default function CuentaPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-5 py-12">
+    <div className="mx-auto max-w-2xl px-4 sm:px-5 py-8 sm:py-12">
       <div className="mb-8">
         <p className="text-xs font-bold tracking-widest text-white/40">CUENTA</p>
         <h1 className="mt-1 text-5xl leading-none" style={{ fontFamily: 'var(--font-bebas)' }}>

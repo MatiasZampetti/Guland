@@ -4,27 +4,27 @@ import { AnimatedTitle } from '@/components/ui/animated-title'
 
 export function CategoryGrid() {
   return (
-    <section id="categorias" className="bg-[#0f0f0f] px-5 py-16">
+    <section id="categorias" className="bg-[#0f0f0f] px-4 sm:px-5 py-12 sm:py-16">
       <div className="mx-auto max-w-7xl">
 
         {/* Header */}
-        <div className="mb-8 flex items-baseline justify-between">
+        <div className="mb-6 sm:mb-8 flex items-baseline justify-between gap-4">
           <AnimatedTitle
-            className="text-5xl leading-none text-white md:text-7xl"
+            className="text-4xl sm:text-5xl leading-none text-white md:text-7xl"
             style={{ fontFamily: 'var(--font-bebas)' }}
           >
             CATEGORÍAS
           </AnimatedTitle>
           <Link
             href="/shop"
-            className="text-xs font-semibold tracking-widest text-white/40 underline underline-offset-4 hover:text-white transition-colors"
+            className="shrink-0 text-xs font-semibold tracking-widest text-white/40 underline underline-offset-4 hover:text-white transition-colors"
           >
             VER TODO →
           </Link>
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3">
           {categories.map((cat) => (
             <Link
               key={cat.slug}
@@ -38,14 +38,14 @@ export function CategoryGrid() {
               />
 
               {/* Nombre de categoría */}
-              <div className="absolute inset-0 flex flex-col justify-end p-4">
+              <div className="absolute inset-0 flex flex-col justify-end p-3 sm:p-4">
                 <p
-                  className="text-4xl leading-none text-white md:text-5xl"
+                  className="text-3xl sm:text-4xl leading-none text-white md:text-5xl"
                   style={{ fontFamily: 'var(--font-bebas)' }}
                 >
                   {cat.label.toUpperCase()}
                 </p>
-                <p className="mt-1 text-xs font-semibold tracking-widest text-white/60 transition-opacity group-hover:text-white/90">
+                <p className="mt-1 text-[10px] sm:text-xs font-semibold tracking-widest text-white/60 transition-opacity group-hover:text-white/90">
                   VER MÁS →
                 </p>
               </div>

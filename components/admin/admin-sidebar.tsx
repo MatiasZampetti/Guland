@@ -16,17 +16,20 @@ export function AdminSidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="flex h-screen w-56 shrink-0 flex-col bg-[#111] text-white">
+    <aside className="flex h-screen w-14 sm:w-48 md:w-56 shrink-0 flex-col bg-[#111] text-white overflow-hidden">
       {/* Logo */}
-      <div className="border-b border-white/10 px-6 py-5">
-        <p className="text-2xl leading-none text-white" style={{ fontFamily: 'var(--font-bebas)' }}>
+      <div className="border-b border-white/10 px-3 sm:px-6 py-5">
+        <p className="text-2xl leading-none text-white hidden sm:block" style={{ fontFamily: 'var(--font-bebas)' }}>
           GULAND
         </p>
-        <p className="mt-0.5 text-[10px] tracking-widest text-white/30">ADMIN PANEL</p>
+        <p className="text-2xl leading-none text-white sm:hidden" style={{ fontFamily: 'var(--font-bebas)' }}>
+          G
+        </p>
+        <p className="mt-0.5 text-[10px] tracking-widest text-white/30 hidden sm:block">ADMIN PANEL</p>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4">
+      <nav className="flex-1 px-2 sm:px-3 py-4">
         <ul className="space-y-1">
           {navItems.map(({ href, label, icon: Icon, exact }) => {
             const active = exact ? pathname === href : pathname.startsWith(href)
@@ -34,14 +37,15 @@ export function AdminSidebar() {
               <li key={href}>
                 <Link
                   href={href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                  title={label}
+                  className={`flex items-center gap-3 rounded-lg px-2 sm:px-3 py-2.5 text-sm transition-colors ${
                     active
                       ? 'bg-white/10 text-white'
                       : 'text-white/50 hover:bg-white/5 hover:text-white'
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
-                  {label}
+                  <span className="hidden sm:block">{label}</span>
                 </Link>
               </li>
             )
@@ -50,14 +54,15 @@ export function AdminSidebar() {
       </nav>
 
       {/* Ver tienda */}
-      <div className="border-t border-white/10 p-3">
+      <div className="border-t border-white/10 p-2 sm:p-3">
         <Link
           href="/"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-white/40 transition-colors hover:text-white"
+          title="Ver tienda"
+          className="flex items-center gap-3 rounded-lg px-2 sm:px-3 py-2.5 text-xs text-white/40 transition-colors hover:text-white"
           target="_blank"
         >
-          <ExternalLink className="h-3.5 w-3.5" />
-          Ver tienda
+          <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+          <span className="hidden sm:block">Ver tienda</span>
         </Link>
       </div>
     </aside>

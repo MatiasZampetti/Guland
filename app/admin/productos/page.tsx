@@ -21,13 +21,13 @@ export default function AdminProductosPage() {
   )
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="p-4 sm:p-6 md:p-8">
+      <div className="mb-5 sm:mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Productos</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Productos</h1>
           <p className="mt-1 text-sm text-gray-500">{products.length} productos en total</p>
         </div>
-        <Button className="gap-2 rounded-lg bg-black text-xs font-semibold tracking-wider text-white hover:bg-gray-800">
+        <Button className="gap-2 rounded-lg bg-black text-xs font-semibold tracking-wider text-white hover:bg-gray-800 min-h-[40px]">
           <Plus className="h-4 w-4" />
           Nuevo producto
         </Button>
@@ -44,7 +44,7 @@ export default function AdminProductosPage() {
       </div>
 
       {/* Tabla */}
-      <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl bg-white shadow-sm overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100">

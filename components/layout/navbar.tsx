@@ -31,6 +31,14 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
+  const [isLandscape, setIsLandscape] = useState(false)
+  useEffect(() => {
+    const check = () => setIsLandscape(window.innerWidth > window.innerHeight)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
   const itemCount = useCartStore((s) => s.itemCount())
   const { user, logout, activateAdminSession } = useAuthStore()
 
@@ -112,9 +120,9 @@ export function Navbar() {
 
           {/* Izquierda */}
           <div className="flex items-center gap-3">
-            {/* Hamburger — solo mobile */}
+            {/* Hamburger — mobile y landscape phone */}
             <button
-              className="md:hidden text-white"
+              className="lg:hidden text-white"
               onClick={() => setMobileMenuOpen((p) => !p)}
               aria-label="Abrir menú"
             >
@@ -122,7 +130,7 @@ export function Navbar() {
             </button>
 
             {/* TIENDA button — solo desktop */}
-            <div ref={shopMenuRef} className="relative hidden md:block">
+            <div ref={shopMenuRef} className="relative hidden lg:block">
               <button
                 onClick={() => setShopMenuOpen((prev) => !prev)}
                 className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-semibold tracking-widest transition-colors ${solid ? 'border-white/20 text-white hover:bg-red-700 hover:border-red-700' : 'border-white text-white hover:bg-white hover:text-black'}`}
@@ -227,27 +235,59 @@ export function Navbar() {
 
       {/* Mobile menu overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-[#0a0a0a] pt-16 md:hidden overflow-y-auto">
-          <nav className="flex flex-col px-6 py-8 gap-1">
-            <p className="mb-4 text-[10px] font-bold tracking-[0.3em] text-white/30">TIENDA</p>
-            <Link href="/shop" onClick={() => setMobileMenuOpen(false)} className="py-3 text-lg font-semibold text-white border-b border-white/10">
-              Todas las categorías
-            </Link>
-            {categories.map((cat) => (
-              <Link key={cat.slug} href={`/shop/${cat.slug}`} onClick={() => setMobileMenuOpen(false)} className="py-3 text-base text-white/70 border-b border-white/5">
-                {cat.label}
+        <div className="fixed inset-0 z-40 bg-[#0a0a0a] pt-16 lg:hidden overflow-y-auto">
+          <nav
+            className="px-6"
+            style={{
+              display: 'flex',
+              flexDirection: isLandscape ? 'row' : 'column',
+              gap: isLandscape ? '2rem' : '0',
+              paddingTop: isLandscape ? '0.75rem' : '1.5rem',
+              paddingBottom: isLandscape ? '0.75rem' : '1.5rem',
+            }}
+          >
+            {/* Columna categorías */}
+            <div style={{ flex: isLandscape ? '1' : undefined }} className="flex flex-col">
+              <p className="mb-3 text-[10px] font-bold tracking-[0.3em] text-white/30">TIENDA</p>
+              <Link
+                href="/shop"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ paddingTop: isLandscape ? '0.25rem' : '0.625rem', paddingBottom: isLandscape ? '0.25rem' : '0.625rem' }}
+                className={`${isLandscape ? 'text-sm' : 'text-base'} font-semibold text-white border-b border-white/10`}
+              >
+                Todas las categorías
               </Link>
-            ))}
-            <div className="mt-6 flex flex-col gap-3">
-              <Link href="/shop?filter=destacados" onClick={() => setMobileMenuOpen(false)} className="text-sm font-bold tracking-widest text-white/60 hover:text-red-500">DESTACADOS</Link>
-              <Link href="/shop?filter=new-drops" onClick={() => setMobileMenuOpen(false)} className="text-sm font-bold tracking-widest text-white/60 hover:text-red-500">NEW DROPS</Link>
-              <Link href="/shop?filter=sale" onClick={() => setMobileMenuOpen(false)} className="text-sm font-bold tracking-widest text-red-500">SALE</Link>
+              {categories.map((cat) => (
+                <Link
+                  key={cat.slug}
+                  href={`/shop/${cat.slug}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{ paddingTop: isLandscape ? '0.25rem' : '0.625rem', paddingBottom: isLandscape ? '0.25rem' : '0.625rem' }}
+                  className={`${isLandscape ? 'text-xs' : 'text-sm'} text-white/70 border-b border-white/5`}
+                >
+                  {cat.label}
+                </Link>
+              ))}
             </div>
-            <div className="mt-8 border-t border-white/10 pt-6 flex flex-col gap-3">
-              <Link href="/cart" onClick={() => setMobileMenuOpen(false)} className="text-sm text-white/60">Carrito</Link>
-              <Link href="/cuenta/login" onClick={() => setMobileMenuOpen(false)} className="text-sm text-white/60">Mi cuenta</Link>
-              <Link href="/ayuda" onClick={() => setMobileMenuOpen(false)} className="text-sm text-white/60">Ayuda</Link>
+
+            {/* Columna filtros + cuenta */}
+            <div
+              style={{ flex: isLandscape ? '1' : undefined, marginTop: isLandscape ? '0' : '1.5rem' }}
+              className="flex flex-col gap-4"
+            >
+              <div className="flex flex-col gap-2">
+                <p className="text-[10px] font-bold tracking-[0.3em] text-white/30 mb-1">FILTROS</p>
+                <Link href="/shop?filter=destacados" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} font-bold tracking-widest text-white/60 hover:text-red-500`}>DESTACADOS</Link>
+                <Link href="/shop?filter=new-drops" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} font-bold tracking-widest text-white/60 hover:text-red-500`}>NEW DROPS</Link>
+                <Link href="/shop?filter=sale" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} font-bold tracking-widest text-white/60 hover:text-red-500`}>SALE</Link>
+              </div>
+              <div className="border-t border-white/10 pt-4 flex flex-col gap-2">
+                <Link href="/cart" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} text-white/60`}>Carrito</Link>
+                <Link href="/cuenta/login" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} text-white/60`}>Mi cuenta</Link>
+                <Link href="/ayuda" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} text-white/60`}>Ayuda</Link>
+              </div>
             </div>
+
           </nav>
         </div>
       )}

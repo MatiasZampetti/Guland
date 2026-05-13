@@ -22,29 +22,29 @@ export default function ProductPage({ params }: Props) {
   const [selectedSize, setSelectedSize] = useState<Size | null>(null)
 
   return (
-    <div className="mx-auto max-w-7xl px-5 py-12">
-      <nav className="mb-8 flex gap-2 text-xs text-white/40">
-        <Link href="/" className="hover:text-white">Inicio</Link>
-        <span>/</span>
-        <Link href={`/shop/${product.category}`} className="hover:text-white capitalize">
+    <div className="mx-auto max-w-7xl px-4 sm:px-5 py-8 sm:py-12">
+      <nav className="mb-6 sm:mb-8 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/40 min-w-0">
+        <Link href="/" className="hover:text-white shrink-0">Inicio</Link>
+        <span className="shrink-0">/</span>
+        <Link href={`/shop/${product.category}`} className="hover:text-white capitalize shrink-0">
           {product.category}
         </Link>
-        <span>/</span>
-        <span className="text-white/80">{product.name}</span>
+        <span className="shrink-0">/</span>
+        <span className="text-white/80 truncate min-w-0">{product.name}</span>
       </nav>
 
-      <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8 md:gap-12">
         <ProductGallery images={product.images} name={product.name} />
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5 sm:gap-6">
           <div>
             <p className="mb-1 text-xs font-bold tracking-widest text-white/40">
               {product.category.toUpperCase()}
             </p>
-            <h1 className="text-4xl font-light" style={{ fontFamily: 'var(--font-bebas)', fontSize: '2.5rem' }}>
+            <h1 className="font-light" style={{ fontFamily: 'var(--font-bebas)', fontSize: 'clamp(1.8rem, 5vw, 2.5rem)' }}>
               {product.name}
             </h1>
-            <p className="mt-3 text-2xl font-semibold">
+            <p className="mt-3 text-xl sm:text-2xl font-semibold">
               ${product.price.toLocaleString('es-AR')}
             </p>
           </div>

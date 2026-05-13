@@ -35,12 +35,12 @@ export function ProductCard({ product, dark = false }: ProductCardProps) {
       </div>
 
       {/* Info */}
-      <div className="mt-3">
-        <p className={`text-[11px] font-bold tracking-widest ${mutedColor}`}>
+      <div className="mt-2 sm:mt-3">
+        <p className={`text-[10px] sm:text-[11px] font-bold tracking-widest ${mutedColor}`}>
           {product.category.toUpperCase()}
         </p>
-        <p className={`mt-0.5 text-sm font-medium ${textColor}`}>{product.name}</p>
-        <p className={`mt-0.5 text-sm font-semibold ${textColor}`}>
+        <p className={`mt-0.5 text-xs sm:text-sm font-medium line-clamp-1 ${textColor}`}>{product.name}</p>
+        <p className={`mt-0.5 text-xs sm:text-sm font-semibold ${textColor}`}>
           ${product.price.toLocaleString('es-AR')}
         </p>
       </div>

@@ -2,11 +2,11 @@ import Link from 'next/link'
 
 export function Footer() {
   return (
-    <footer className="bg-black text-white">
-      <div className="mx-auto max-w-7xl px-5 py-14">
-        <div className="mb-10 flex flex-col gap-2">
+    <footer className="bg-black text-white pb-20 md:pb-0">
+      <div className="mx-auto max-w-7xl px-4 sm:px-5 py-12 sm:py-14">
+        <div className="mb-8 sm:mb-10 flex flex-col gap-2">
           <p
-            className="text-6xl leading-none md:text-8xl"
+            className="text-5xl sm:text-6xl leading-none md:text-8xl"
             style={{ fontFamily: 'var(--font-bebas)' }}
           >
             GULAND

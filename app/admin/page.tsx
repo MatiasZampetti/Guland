@@ -55,14 +55,14 @@ export default function AdminPage() {
   const recentOrders = mockOrders.slice(0, 5)
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Panel de control</h1>
+    <div className="p-4 sm:p-6 md:p-8">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Panel de control</h1>
         <p className="mt-1 text-sm text-gray-500">Resumen general — Mayo 2026</p>
       </div>
 
       {/* Stats */}
-      <div className="mb-8 grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className="mb-6 sm:mb-8 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {stats.map(({ label, value, change, icon: Icon }) => (
           <div key={label} className="rounded-xl bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between">
@@ -82,8 +82,8 @@ export default function AdminPage() {
       </div>
 
       {/* Últimos pedidos */}
-      <div className="rounded-xl bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+      <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between border-b border-gray-100 px-4 sm:px-6 py-4">
           <h2 className="text-sm font-semibold text-gray-900">Últimos pedidos</h2>
           <Link href="/admin/pedidos" className="text-xs font-medium text-gray-400 hover:text-black">
             Ver todos →

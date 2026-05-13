@@ -31,9 +31,9 @@ export default function AdminPedidosPage() {
   const total = filtered.reduce((sum, o) => sum + o.total, 0)
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Pedidos</h1>
+    <div className="p-4 sm:p-6 md:p-8">
+      <div className="mb-5 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Pedidos</h1>
         <p className="mt-1 text-sm text-gray-500">
           {filtered.length} pedidos · ${total.toLocaleString('es-AR')} en total
         </p>
@@ -57,7 +57,7 @@ export default function AdminPedidosPage() {
       </div>
 
       {/* Tabla */}
-      <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl bg-white shadow-sm overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100">

@@ -65,7 +65,7 @@ export function SizeSelector({ available, selected, onSelect }: SizeSelectorProp
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md bg-[#0f0f0f] border border-white/10 text-white">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md bg-[#0f0f0f] border border-white/10 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle
               style={{ fontFamily: 'var(--font-bebas)', fontSize: '2rem', lineHeight: 1 }}
