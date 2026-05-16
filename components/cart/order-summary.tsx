@@ -4,7 +4,7 @@ import { useCartStore } from '@/lib/store'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 
-const WHATSAPP_NUMBER = '5491100000000'
+const WHATSAPP_NUMBER = '5493573498196'
 
 export function OrderSummary() {
   const items = useCartStore((s) => s.items)

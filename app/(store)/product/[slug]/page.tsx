@@ -1,10 +1,11 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useState, useEffect } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { products } from '@/lib/mock-data'
-import { Size } from '@/types'
+import { Loader2 } from 'lucide-react'
+import { dbToProduct, type DBProduct } from '@/lib/db-mapper'
+import { type Product, Size } from '@/types'
 import { ProductGallery } from '@/components/product/product-gallery'
 import { SizeSelector } from '@/components/product/size-selector'
 import { AddToCartButton } from '@/components/product/add-to-cart-button'
@@ -16,10 +17,29 @@ interface Props {
 
 export default function ProductPage({ params }: Props) {
   const { slug } = use(params)
-  const product = products.find((p) => p.slug === slug)
-  if (!product) notFound()
-
+  const [product, setProduct] = useState<Product | null>(null)
+  const [notFoundFlag, setNotFoundFlag] = useState(false)
   const [selectedSize, setSelectedSize] = useState<Size | null>(null)
+
+  useEffect(() => {
+    fetch(`/api/products?slug=${slug}`)
+      .then((r) => r.json())
+      .then((data: DBProduct[]) => {
+        if (!data?.length) { setNotFoundFlag(true); return }
+        setProduct(dbToProduct(data[0]))
+      })
+      .catch(() => setNotFoundFlag(true))
+  }, [slug])
+
+  if (notFoundFlag) notFound()
+
+  if (!product) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-white/40" />
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-5 py-8 sm:py-12">
@@ -65,7 +85,6 @@ export default function ProductPage({ params }: Props) {
             <p className="mb-2 text-xs font-bold tracking-widest text-white/40">DESCRIPCIÓN</p>
             <p className="text-sm leading-relaxed text-white/60">{product.description}</p>
           </div>
-
         </div>
       </div>
     </div>

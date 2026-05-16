@@ -55,7 +55,7 @@ export default function AyudaPage() {
       <div className="mt-16 border-t border-white/10 pt-10 text-center">
         <p className="text-sm text-white/40">¿No encontraste lo que buscabas?</p>
         <a
-          href="https://wa.me/5491100000000"
+          href="https://wa.me/5493573498196"
           target="_blank"
           rel="noopener noreferrer"
           className="mt-4 inline-flex items-center gap-3 rounded-full bg-white px-8 py-3 text-xs font-bold tracking-widest text-black transition-opacity hover:opacity-70"
