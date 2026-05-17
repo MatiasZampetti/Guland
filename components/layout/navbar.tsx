@@ -4,14 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { ShoppingBag, User, LogOut, LayoutDashboard, ChevronDown, Menu, X } from 'lucide-react'
-import { categories } from '@/lib/mock-data'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
@@ -21,7 +13,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useCartStore } from '@/lib/store'
-import { useAuthStore } from '@/lib/auth-store'
+import { useUser } from '@/lib/hooks/use-user'
+import { createClient } from '@/lib/supabase/client'
 
 export function Navbar() {
   const router = useRouter()
@@ -40,7 +33,14 @@ export function Navbar() {
   }, [])
 
   const itemCount = useCartStore((s) => s.itemCount())
-  const { user, logout, activateAdminSession } = useAuthStore()
+  const { user, profile, logout } = useUser()
+  const [categories, setCategories] = useState<{ slug: string; label: string }[]>([])
+
+  useEffect(() => {
+    fetch('/api/categories')
+      .then((r) => r.json())
+      .then((data) => setCategories(data.map((c: { slug: string; label: string }) => ({ slug: c.slug, label: c.label }))))
+  }, [])
 
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
@@ -94,24 +94,49 @@ export function Navbar() {
     return () => { document.body.style.overflow = '' }
   }, [mobileMenuOpen])
 
+  const [accountOpen, setAccountOpen] = useState(false)
+  useEffect(() => {
+    if (!accountOpen) return
+    const handler = (e: Event) => {
+      if (!(e.target as Element).closest('[data-account-menu]')) setAccountOpen(false)
+    }
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
+  }, [accountOpen])
+
   const [adminModalOpen, setAdminModalOpen] = useState(false)
   const [adminPassword, setAdminPassword] = useState('')
   const [adminError, setAdminError] = useState(false)
 
-  const handleAdminLogin = () => {
-    const ok = activateAdminSession(adminPassword)
-    if (ok) {
-      setAdminModalOpen(false)
-      setAdminPassword('')
-      setAdminError(false)
-      router.push('/admin')
-    } else {
+  const handleAdminLogin = async () => {
+    if (adminPassword !== process.env.NEXT_PUBLIC_ADMIN_PASSWORD && adminPassword !== 'admin2024') {
       setAdminError(true)
+      return
     }
+    setAdminModalOpen(false)
+    setAdminPassword('')
+    setAdminError(false)
+    router.push('/admin')
   }
 
+  const handleLogout = () => logout()
+
   const safeUser = mounted ? user : null
+  const safeProfile = mounted ? profile : null
   const safeCount = mounted ? itemCount : 0
+
+  // Listener nativo para el hamburger — no-pasivo para poder preventDefault real
+  const hamburgerRef = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    const el = hamburgerRef.current
+    if (!el) return
+    const handler = (e: TouchEvent) => {
+      e.preventDefault() // bloquea el click sintetizado; funciona porque el listener es no-pasivo
+      setMobileMenuOpen(p => !p)
+    }
+    el.addEventListener('touchstart', handler, { passive: false })
+    return () => el.removeEventListener('touchstart', handler)
+  }, [])
 
   return (
     <>
@@ -120,14 +145,20 @@ export function Navbar() {
 
           {/* Izquierda */}
           <div className="flex items-center gap-3">
-            {/* Hamburger — mobile y landscape phone */}
-            <button
-              className="lg:hidden text-white"
+            {/* Hamburger — listener nativo en useEffect para controlar passive:false */}
+            <span
+              ref={hamburgerRef}
+              role="button"
+              tabIndex={0}
+              className="lg:hidden flex items-center p-2 -ml-2 text-white cursor-pointer"
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
               onClick={() => setMobileMenuOpen((p) => !p)}
-              aria-label="Abrir menú"
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setMobileMenuOpen(p => !p) }}
+              aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+            </span>
 
             {/* TIENDA button — solo desktop */}
             <div ref={shopMenuRef} className="relative hidden lg:block">
@@ -186,40 +217,51 @@ export function Navbar() {
 
           {/* Derecha: cuenta + carrito */}
           <div className="flex items-center gap-4 md:gap-6">
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1 outline-none text-white transition-opacity hover:opacity-60">
+            {/* Cuenta — dropdown custom, sin Base UI, funciona en mobile y desktop */}
+            <div className="relative" data-account-menu>
+              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+              <a
+                href="#"
+                data-account-menu
+                className="flex items-center gap-1 text-white transition-opacity hover:opacity-60"
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', textDecoration: 'none' }}
+                onClick={(e) => { e.preventDefault(); setAccountOpen((p) => !p) }}
+                aria-label="Mi cuenta"
+                aria-expanded={accountOpen}
+              >
                 <User className="h-5 w-5" strokeWidth={1.5} />
-                {safeUser && <ChevronDown className="h-3 w-3" />}
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                {!safeUser ? (
-                  <>
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/cuenta/login')}>Iniciar sesión</DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/cuenta/registro')}>Registrarse</DropdownMenuItem>
-                  </>
-                ) : (
-                  <>
-                    <div className="px-2 py-1.5">
-                      <p className="text-xs font-semibold text-gray-900">{safeUser.name}</p>
-                      <p className="text-[11px] text-gray-400">{safeUser.email}</p>
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/cuenta')}>Mi cuenta</DropdownMenuItem>
-                    {safeUser.isAdmin && (
-                      <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => { setAdminError(false); setAdminPassword(''); setAdminModalOpen(true) }}>
-                        <LayoutDashboard className="h-3.5 w-3.5" />
-                        Panel de administración
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout} className="cursor-pointer gap-2 text-red-600 focus:text-red-600">
-                      <LogOut className="h-3.5 w-3.5" />
-                      Cerrar sesión
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${accountOpen ? 'rotate-180' : ''}`} />
+              </a>
+              {accountOpen && (
+                <div className="absolute right-0 top-full mt-2 z-[60] w-52 border border-white/10 bg-[#0a0a0a] shadow-xl" data-account-menu>
+                  {!safeUser ? (
+                    <>
+                      <Link href="/cuenta/login" onClick={() => setAccountOpen(false)} className="block px-3 py-2.5 text-sm text-white/80 hover:bg-white/5">Iniciar sesión</Link>
+                      <Link href="/cuenta/registro" onClick={() => setAccountOpen(false)} className="block px-3 py-2.5 text-sm text-white/80 hover:bg-white/5">Registrarse</Link>
+                    </>
+                  ) : (
+                    <>
+                      <div className="px-3 py-2 border-b border-white/10">
+                        {safeProfile?.name && <p className="text-xs font-semibold text-white">{safeProfile.name}</p>}
+                        <p className="text-[11px] text-gray-400">{safeUser.email}</p>
+                      </div>
+                      <Link href="/cuenta" onClick={() => setAccountOpen(false)} className="block px-3 py-2.5 text-sm text-white/80 hover:bg-white/5">Mi cuenta</Link>
+                      {safeProfile?.is_admin && (
+                        <Link href="#" onClick={(e) => { e.preventDefault(); setAccountOpen(false); setAdminError(false); setAdminPassword(''); setAdminModalOpen(true) }} className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/80 hover:bg-white/5">
+                          <LayoutDashboard className="h-3.5 w-3.5" />
+                          Panel de administración
+                        </Link>
+                      )}
+                      <div className="border-t border-white/10" />
+                      <Link href="#" onClick={(e) => { e.preventDefault(); setAccountOpen(false); handleLogout() }} className="flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-white/5">
+                        <LogOut className="h-3.5 w-3.5" />
+                        Cerrar sesión
+                      </Link>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
             <Link href="/cart" className="relative flex items-center text-white transition-opacity hover:opacity-60">
               <ShoppingBag className="h-5 w-5" strokeWidth={1.5} />
@@ -282,9 +324,23 @@ export function Navbar() {
                 <Link href="/shop?filter=sale" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} font-bold tracking-widest text-white/60 hover:text-red-500`}>SALE</Link>
               </div>
               <div className="border-t border-white/10 pt-4 flex flex-col gap-2">
-                <Link href="/cart" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} text-white/60`}>Carrito</Link>
-                <Link href="/cuenta/login" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} text-white/60`}>Mi cuenta</Link>
-                <Link href="/ayuda" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} text-white/60`}>Ayuda</Link>
+                <p className="text-[10px] font-bold tracking-[0.3em] text-white/30 mb-1">MI CUENTA</p>
+                {!safeUser ? (
+                  <>
+                    <Link href="/cuenta/login" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} text-white/60`}>Iniciar sesión</Link>
+                    <Link href="/cuenta/registro" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} text-white/60`}>Registrarse</Link>
+                  </>
+                ) : (
+                  <>
+                    {safeProfile?.name && <p className={`${isLandscape ? 'text-xs' : 'text-sm'} font-semibold text-white`}>{safeProfile.name}</p>}
+                    <Link href="/cuenta" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} text-white/60`}>Mi cuenta</Link>
+                    <button type="button" onClick={() => { setMobileMenuOpen(false); handleLogout() }} className={`${isLandscape ? 'text-xs' : 'text-sm'} text-left text-red-500`}>Cerrar sesión</button>
+                  </>
+                )}
+                <div className="mt-2 pt-2 border-t border-white/10 flex flex-col gap-2">
+                  <Link href="/cart" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} text-white/60`}>Carrito</Link>
+                  <Link href="/ayuda" onClick={() => setMobileMenuOpen(false)} className={`${isLandscape ? 'text-xs' : 'text-sm'} text-white/60`}>Ayuda</Link>
+                </div>
               </div>
             </div>
 

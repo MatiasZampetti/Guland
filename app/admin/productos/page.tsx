@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Pencil, Trash2, MoreHorizontal } from 'lucide-react'
-import { products } from '@/lib/mock-data'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect, useRef } from 'react'
+import { Plus, Trash2, MoreHorizontal, Search, CheckCircle, X, Tag, Upload, ImagePlus, Pencil } from 'lucide-react'
+import { dbToProduct, type DBProduct } from '@/lib/db-mapper'
+import { type Product, Size } from '@/types'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,45 +11,403 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-export default function AdminProductosPage() {
-  const [search, setSearch] = useState('')
+const SIZES: Size[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+type Visibilidad = 'tienda' | 'new' | 'sale'
+type ActivePanel = 'producto' | 'categorias' | null
 
-  const filtered = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.category.includes(search.toLowerCase())
+const emptyForm = {
+  name: '',
+  price: '',
+  category: '',
+  sizes: [] as Size[],
+  description: '',
+  image1: '',
+  image1File: null as File | null,
+  image1Preview: '',
+  image2: '',
+  image2File: null as File | null,
+  image2Preview: '',
+  visibilidad: 'tienda' as Visibilidad,
+  featured: false,
+}
+
+const emptyCatForm = { label: '', imageFile: null as File | null, imagePreview: '' }
+
+function slugify(name: string) {
+  return name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+const inputClass = 'w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-gray-400 transition-colors'
+const labelClass = 'block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5'
+
+function ImageUploadField({
+  label,
+  preview,
+  onFile,
+  required,
+}: {
+  label: string
+  preview: string
+  onFile: (file: File) => void
+  required?: boolean
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  return (
+    <div>
+      <label className={labelClass}>{label}</label>
+      <div
+        onClick={() => ref.current?.click()}
+        className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 transition-colors hover:border-gray-400 hover:bg-gray-100"
+        style={{ minHeight: '80px' }}
+      >
+        {preview ? (
+          <img src={preview} alt="" className="h-20 w-full rounded-lg object-cover" />
+        ) : (
+          <div className="flex flex-col items-center gap-1 py-4 text-gray-400">
+            <ImagePlus className="h-6 w-6" />
+            <span className="text-xs font-medium">Subir imagen</span>
+          </div>
+        )}
+      </div>
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        required={required && !preview}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f) }}
+      />
+    </div>
   )
+}
+
+export default function AdminProductosPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<{ slug: string; label: string; image_url: string }[]>([])
+  const [activePanel, setActivePanel] = useState<ActivePanel>(null)
+  const [form, setForm] = useState(emptyForm)
+  const [catForm, setCatForm] = useState(emptyCatForm)
+  const [lastAdded, setLastAdded] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [catFilter, setCatFilter] = useState('todos')
+  const [submitting, setSubmitting] = useState(false)
+
+  const allFilterCats = ['todos', ...categories.map((c) => c.slug)]
+
+  useEffect(() => {
+    fetch('/api/products').then(r => r.json()).then((data: DBProduct[]) => setProducts(data.map(dbToProduct)))
+    fetch('/api/categories').then(r => r.json()).then(setCategories)
+  }, [])
+
+  const filtered = products.filter((p) => {
+    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.category.includes(search.toLowerCase())
+    const matchCat = catFilter === 'todos' || p.category === catFilter
+    return matchSearch && matchCat
+  })
+
+  function togglePanel(panel: ActivePanel) {
+    setActivePanel((v) => (v === panel ? null : panel))
+    setLastAdded(null)
+  }
+
+  function toggleSize(s: Size) {
+    setForm((f) => ({ ...f, sizes: f.sizes.includes(s) ? f.sizes.filter((x) => x !== s) : [...f.sizes, s] }))
+  }
+
+  async function uploadImage(file: File, bucket: string): Promise<string> {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('bucket', bucket)
+    const res = await fetch('/api/upload', { method: 'POST', body: fd })
+    const { url } = await res.json()
+    return url
+  }
+
+  async function handleSubmitProduct(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.name || !form.price || !form.category || form.sizes.length === 0) return
+    if (!form.image1 && !form.image1File) return
+    setSubmitting(true)
+
+    const images: string[] = []
+    if (form.image1File) images.push(await uploadImage(form.image1File, 'products'))
+    else if (form.image1) images.push(form.image1)
+    if (form.image2File) images.push(await uploadImage(form.image2File, 'products'))
+
+    const res = await fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slug: slugify(form.name),
+        name: form.name,
+        price: parseInt(form.price),
+        category_slug: form.category,
+        description: form.description,
+        images,
+        sizes: form.sizes,
+        featured: form.featured,
+        is_new: form.visibilidad === 'new',
+        is_on_sale: form.visibilidad === 'sale',
+      }),
+    })
+
+    if (res.ok) {
+      const newProd = await res.json()
+      setProducts((prev) => [dbToProduct(newProd as DBProduct), ...prev])
+      setLastAdded(form.name)
+      setForm(emptyForm)
+      setActivePanel(null)
+    }
+    setSubmitting(false)
+  }
+
+  async function handleAddCategory(e: React.FormEvent) {
+    e.preventDefault()
+    if (!catForm.label || !catForm.imageFile) return
+    setSubmitting(true)
+
+    const image_url = await uploadImage(catForm.imageFile, 'categories')
+    const slug = slugify(catForm.label)
+
+    const res = await fetch('/api/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, label: catForm.label, image_url }),
+    })
+
+    if (res.ok) {
+      const newCat = await res.json()
+      setCategories((prev) => [...prev, newCat])
+      setCatForm(emptyCatForm)
+    }
+    setSubmitting(false)
+  }
+
+  async function handleDeleteCategory(slug: string) {
+    await fetch(`/api/categories/${slug}`, { method: 'DELETE' })
+    setCategories((prev) => prev.filter((c) => c.slug !== slug))
+  }
+
+  async function handleDeleteProduct(id: string) {
+    await fetch(`/api/products/${id}`, { method: 'DELETE' })
+    setProducts((prev) => prev.filter((p) => p.id !== id))
+  }
 
   return (
     <div className="p-4 sm:p-6 md:p-8">
-      <div className="mb-5 sm:mb-6 flex flex-wrap items-center justify-between gap-3">
+
+      {/* Header */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Productos</h1>
-          <p className="mt-1 text-sm text-gray-500">{products.length} productos en total</p>
+          <p className="mt-0.5 text-sm text-gray-400">{products.length} productos en catálogo</p>
         </div>
-        <Button className="gap-2 rounded-lg bg-black text-xs font-semibold tracking-wider text-white hover:bg-gray-800 min-h-[44px]">
-          <Plus className="h-4 w-4" />
-          Nuevo producto
-        </Button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => togglePanel('categorias')}
+            className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold tracking-wider transition-colors min-h-[44px] ${
+              activePanel === 'categorias' ? 'border-gray-800 bg-gray-800 text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+            }`}
+          >
+            {activePanel === 'categorias' ? <X className="h-4 w-4" /> : <Tag className="h-4 w-4" />}
+            Categorías
+          </button>
+          <button
+            onClick={() => togglePanel('producto')}
+            className="flex items-center gap-2 rounded-lg bg-[#0f0f0f] px-4 py-2.5 text-xs font-semibold tracking-wider text-white hover:bg-gray-800 transition-colors min-h-[44px]"
+          >
+            {activePanel === 'producto' ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {activePanel === 'producto' ? 'Cancelar' : 'Nuevo producto'}
+          </button>
+        </div>
       </div>
 
-      {/* Buscador */}
-      <div className="mb-4">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre o categoría..."
-          className="w-full sm:max-w-sm rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm outline-none focus:border-black"
-        />
+      {lastAdded && (
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3.5">
+          <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+          <div>
+            <p className="text-sm font-semibold text-green-800">Producto agregado</p>
+            <p className="text-xs text-green-600 mt-0.5">{lastAdded} ya aparece en el catálogo.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Panel: Categorías */}
+      {activePanel === 'categorias' && (
+        <div className="mb-8 rounded-xl bg-white p-5 sm:p-6 shadow-sm">
+          <h2 className="mb-5 text-sm font-semibold text-gray-900">Gestionar categorías</h2>
+          <div className="mb-5">
+            <label className={labelClass}>Categorías actuales</label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => (
+                <div key={cat.slug} className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 pl-3 pr-1.5 py-1.5">
+                  <img src={cat.image_url} alt={cat.label} className="h-5 w-5 rounded object-cover" />
+                  <span className="text-sm font-medium text-gray-800 capitalize">{cat.label}</span>
+                  <button
+                    onClick={() => handleDeleteCategory(cat.slug)}
+                    className="ml-1 flex h-5 w-5 items-center justify-center rounded text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <form onSubmit={handleAddCategory}>
+            <label className={labelClass}>Agregar nueva categoría</label>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <input
+                  value={catForm.label}
+                  onChange={(e) => setCatForm({ ...catForm, label: e.target.value })}
+                  placeholder="Nombre (ej: Accesorios)"
+                  className={inputClass}
+                  required
+                />
+              </div>
+              <div
+                onClick={() => document.getElementById('cat-image-input')?.click()}
+                className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-gray-200 px-4 py-2.5 text-sm text-gray-400 hover:border-gray-400 transition-colors"
+              >
+                {catForm.imagePreview
+                  ? <img src={catForm.imagePreview} alt="" className="h-6 w-6 rounded object-cover" />
+                  : <Upload className="h-4 w-4" />
+                }
+                <span className="text-xs">{catForm.imageFile ? catForm.imageFile.name : 'Imagen de portada'}</span>
+              </div>
+              <input
+                id="cat-image-input"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) setCatForm({ ...catForm, imageFile: f, imagePreview: URL.createObjectURL(f) })
+                }}
+              />
+              <button
+                type="submit"
+                disabled={!catForm.label || !catForm.imageFile || submitting}
+                className="shrink-0 rounded-lg bg-[#0f0f0f] px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-40 transition-colors"
+              >
+                Agregar
+              </button>
+            </div>
+            {catForm.label && <p className="mt-1.5 text-[11px] text-gray-400">Slug: <span className="font-mono">/shop/{slugify(catForm.label)}</span></p>}
+          </form>
+        </div>
+      )}
+
+      {/* Panel: Nuevo Producto */}
+      {activePanel === 'producto' && (
+        <form onSubmit={handleSubmitProduct} className="mb-8 rounded-xl bg-white p-5 sm:p-6 shadow-sm">
+          <h2 className="mb-5 text-sm font-semibold text-gray-900">Nuevo producto</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Nombre</label>
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Buzo Oversize Negro" className={inputClass} required />
+            </div>
+
+            <div>
+              <label className={labelClass}>Precio ($)</label>
+              <input type="number" min={0} value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="18500" className={inputClass} required />
+            </div>
+
+            <div>
+              <label className={labelClass}>Categoría</label>
+              <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass} required>
+                <option value="">Seleccionar...</option>
+                {categories.map((c) => <option key={c.slug} value={c.slug}>{c.label}</option>)}
+              </select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Talles disponibles</label>
+              <div className="flex flex-wrap gap-2">
+                {SIZES.map((s) => (
+                  <button key={s} type="button" onClick={() => toggleSize(s)}
+                    className={`rounded-lg border px-4 py-2 text-xs font-semibold transition-colors ${form.sizes.includes(s) ? 'border-black bg-black text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'}`}
+                  >{s}</button>
+                ))}
+              </div>
+              {form.sizes.length === 0 && <p className="mt-1.5 text-[11px] text-gray-400">Seleccioná al menos un talle</p>}
+            </div>
+
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className={labelClass}>Descripción</label>
+              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describí el producto..." rows={2} className={`${inputClass} resize-none`} />
+            </div>
+
+            <div className="sm:col-span-2">
+              <ImageUploadField
+                label="Imagen principal *"
+                preview={form.image1Preview || form.image1}
+                onFile={(f) => setForm({ ...form, image1File: f, image1: '', image1Preview: URL.createObjectURL(f) })}
+                required
+              />
+            </div>
+
+            <div>
+              <ImageUploadField
+                label="Imagen secundaria (opcional)"
+                preview={form.image2Preview || form.image2}
+                onFile={(f) => setForm({ ...form, image2File: f, image2: '', image2Preview: URL.createObjectURL(f) })}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Aparece en</label>
+              <div className="flex flex-wrap gap-2">
+                {([{ value: 'tienda', label: 'Solo tienda' }, { value: 'new', label: 'New Drop' }, { value: 'sale', label: 'Sale' }] as { value: Visibilidad; label: string }[]).map(({ value, label }) => (
+                  <button key={value} type="button" onClick={() => setForm({ ...form, visibilidad: value })}
+                    className={`rounded-lg border px-3.5 py-2 text-xs font-medium transition-colors ${form.visibilidad === value ? 'border-black bg-black text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'}`}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Destacado en home</label>
+              <button type="button" onClick={() => setForm({ ...form, featured: !form.featured })}
+                className={`rounded-lg border px-3.5 py-2 text-xs font-medium transition-colors ${form.featured ? 'border-black bg-black text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'}`}
+              >{form.featured ? 'Sí, destacado' : 'No destacado'}</button>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <button type="submit" disabled={submitting || !form.name || !form.price || !form.category || form.sizes.length === 0 || (!form.image1 && !form.image1File)}
+              className="rounded-lg bg-[#0f0f0f] px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-gray-800 disabled:opacity-40"
+            >
+              {submitting ? 'Subiendo...' : 'Agregar producto'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Filters */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1 sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar producto..."
+            className="w-full rounded-lg border border-gray-200 bg-white pl-9 pr-4 py-2.5 text-sm text-gray-900 outline-none focus:border-gray-400 transition-colors"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {allFilterCats.map((c) => (
+            <button key={c} onClick={() => setCatFilter(c)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${catFilter === c ? 'bg-[#0f0f0f] text-white' : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'}`}
+            >{c}</button>
+          ))}
+        </div>
       </div>
 
-      {/* Tabla */}
+      {/* Table */}
       <div className="rounded-xl bg-white shadow-sm overflow-hidden">
-        {/* Mobile cards */}
         <div className="sm:hidden divide-y divide-gray-50">
           {filtered.map((product) => (
             <div key={product.id} className="flex items-start gap-3 px-4 py-3.5">
-              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-gray-100">
+              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-gray-100">
                 <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
               </div>
               <div className="flex-1 min-w-0 space-y-1.5">
@@ -60,8 +418,9 @@ export default function AdminProductosPage() {
                       <MoreHorizontal className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem className="gap-2 text-sm cursor-pointer"><Pencil className="h-3.5 w-3.5" /> Editar</DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 text-sm text-red-600 cursor-pointer focus:text-red-600"><Trash2 className="h-3.5 w-3.5" /> Eliminar</DropdownMenuItem>
+                      <DropdownMenuItem className="gap-2 text-sm text-red-600 cursor-pointer focus:text-red-600" onClick={() => handleDeleteProduct(product.id)}>
+                        <Trash2 className="h-3.5 w-3.5" /> Eliminar
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -71,72 +430,65 @@ export default function AdminProductosPage() {
                   <span className="font-semibold text-gray-900">${product.price.toLocaleString('es-AR')}</span>
                 </div>
                 <div className="flex flex-wrap gap-1">
-                  {product.sizes.map((s) => (
-                    <span key={s} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">{s}</span>
-                  ))}
+                  {product.sizes.map((s) => <span key={s} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">{s}</span>)}
                 </div>
-                <div className="flex gap-1.5">
-                  {product.isNew && <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700">Nuevo</span>}
-                  {product.featured && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700">Destacado</span>}
-                  {!product.isNew && !product.featured && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">Activo</span>}
+                <div className="flex gap-1.5 flex-wrap">
+                  {product.isNew && <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">New Drop</span>}
+                  {product.isOnSale && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Sale</span>}
+                  {product.featured && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">Destacado</span>}
+                  {!product.isNew && !product.featured && !product.isOnSale && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">Tienda</span>}
                 </div>
               </div>
             </div>
           ))}
-          {filtered.length === 0 && <div className="py-12 text-center text-sm text-gray-400">No se encontraron productos.</div>}
+          {filtered.length === 0 && <div className="py-16 text-center text-sm text-gray-400">No se encontraron productos.</div>}
         </div>
-        {/* Desktop table */}
+
         <div className="hidden sm:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Producto</th>
-                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Categoría</th>
-                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Precio</th>
-                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Talles</th>
-                <th className="px-4 md:px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Estado</th>
-                <th className="px-4 md:px-6 py-3" />
+                {['Producto', 'Categoría', 'Precio', 'Talles', 'Estado', ''].map((h) => (
+                  <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtered.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50/50">
-                  <td className="px-4 md:px-6 py-3.5">
+                <tr key={product.id} className="hover:bg-gray-50/60 transition-colors">
+                  <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-100">
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-gray-100">
                         <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
                       </div>
                       <p className="text-sm font-medium text-gray-900">{product.name}</p>
                     </div>
                   </td>
-                  <td className="px-4 md:px-6 py-3.5">
-                    <span className="capitalize text-sm text-gray-600">{product.category}</span>
-                  </td>
-                  <td className="px-4 md:px-6 py-3.5 text-sm font-semibold text-gray-900">
-                    ${product.price.toLocaleString('es-AR')}
-                  </td>
-                  <td className="px-4 md:px-6 py-3.5">
+                  <td className="px-5 py-3.5 capitalize text-sm text-gray-600">{product.category}</td>
+                  <td className="px-5 py-3.5 text-sm font-semibold text-gray-900">${product.price.toLocaleString('es-AR')}</td>
+                  <td className="px-5 py-3.5">
                     <div className="flex flex-wrap gap-1">
-                      {product.sizes.map((s) => (
-                        <span key={s} className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-600">{s}</span>
-                      ))}
+                      {product.sizes.map((s) => <span key={s} className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-600">{s}</span>)}
                     </div>
                   </td>
-                  <td className="px-4 md:px-6 py-3.5">
-                    <div className="flex gap-1.5">
-                      {product.isNew && <span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700">Nuevo</span>}
-                      {product.featured && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-blue-700">Destacado</span>}
-                      {!product.isNew && !product.featured && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-500">Activo</span>}
+                  <td className="px-5 py-3.5">
+                    <div className="flex gap-1.5 flex-wrap">
+                      {product.isNew && <span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700">New Drop</span>}
+                      {product.isOnSale && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Sale</span>}
+                      {product.featured && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">Destacado</span>}
+                      {!product.isNew && !product.featured && !product.isOnSale && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-500">Tienda</span>}
                     </div>
                   </td>
-                  <td className="px-4 md:px-6 py-3.5 text-right">
+                  <td className="px-5 py-3.5 text-right">
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 outline-none hover:bg-gray-100 hover:text-gray-600">
+                      <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 outline-none hover:bg-gray-100">
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem className="gap-2 text-sm cursor-pointer"><Pencil className="h-3.5 w-3.5" /> Editar</DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2 text-sm text-red-600 cursor-pointer focus:text-red-600"><Trash2 className="h-3.5 w-3.5" /> Eliminar</DropdownMenuItem>
+                        <DropdownMenuItem className="gap-2 text-sm text-red-600 cursor-pointer focus:text-red-600" onClick={() => handleDeleteProduct(product.id)}>
+                          <Trash2 className="h-3.5 w-3.5" /> Eliminar
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
@@ -144,7 +496,7 @@ export default function AdminProductosPage() {
               ))}
             </tbody>
           </table>
-          {filtered.length === 0 && <div className="py-12 text-center text-sm text-gray-400">No se encontraron productos.</div>}
+          {filtered.length === 0 && <div className="py-16 text-center text-sm text-gray-400">No se encontraron productos.</div>}
         </div>
       </div>
     </div>
