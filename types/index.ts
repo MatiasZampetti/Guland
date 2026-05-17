@@ -1,12 +1,6 @@
 export type Size = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL'
 
-export type Category =
-  | 'buzos'
-  | 'camperas'
-  | 'sweaters'
-  | 'remeras'
-  | 'jeans'
-  | 'bermudas'
+export type Category = string
 
 export interface Product {
   id: string
