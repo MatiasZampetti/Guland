@@ -50,3 +50,57 @@ export const mockUsers: MockUser[] = [
   { id: 'USR-007', nombre: 'Camila Torres', email: 'cami@email.com', pedidos: 6, gastado: 312000, registro: '2025-10-22', estado: 'activo' },
   { id: 'USR-008', nombre: 'Diego Sánchez', email: 'diego@email.com', pedidos: 2, gastado: 42000, registro: '2026-03-09', estado: 'activo' },
 ]
+
+// Finanzas
+export interface FinanzasMes {
+  mes: string
+  ventas: number
+  costos: number
+  ganancia: number
+}
+
+export const finanzasMensuales: FinanzasMes[] = [
+  { mes: 'Ene', ventas: 780000, costos: 312000, ganancia: 468000 },
+  { mes: 'Feb', ventas: 920000, costos: 368000, ganancia: 552000 },
+  { mes: 'Mar', ventas: 1050000, costos: 420000, ganancia: 630000 },
+  { mes: 'Abr', ventas: 980000, costos: 392000, ganancia: 588000 },
+  { mes: 'May', ventas: 1248500, costos: 499400, ganancia: 749100 },
+]
+
+export const finanzasResumen = {
+  ingresosTotales: 4978500,
+  costosTotales: 1991400,
+  gananciaTotal: 2987100,
+  rentabilidadPct: 60,
+  inversionProductos: 380000,
+  inversionMarketing: 45000,
+  inversionLogistica: 72000,
+  inversionOtros: 18000,
+}
+
+// Ventas registradas
+export type MetodoPago = 'efectivo' | 'transferencia' | 'mercadopago' | 'tarjeta'
+
+export interface VentaRegistrada {
+  id: string
+  fecha: string
+  hora: string
+  cliente: string
+  producto: string
+  talle: string
+  cantidad: number
+  precioUnitario: number
+  total: number
+  metodoPago: MetodoPago
+}
+
+export const ventasIniciales: VentaRegistrada[] = [
+  { id: 'V-031', fecha: '2026-05-13', hora: '14:32', cliente: 'Roberto Álvarez', producto: 'Rompevientos Negro', talle: 'L', cantidad: 1, precioUnitario: 35000, total: 35000, metodoPago: 'mercadopago' },
+  { id: 'V-030', fecha: '2026-05-13', hora: '11:15', cliente: 'Ana Gutiérrez', producto: 'Buzo Básico Negro', talle: 'M', cantidad: 2, precioUnitario: 18500, total: 37000, metodoPago: 'transferencia' },
+  { id: 'V-029', fecha: '2026-05-12', hora: '18:45', cliente: 'Carlos Medina', producto: 'Hoodie Gris Oversize', talle: 'S', cantidad: 1, precioUnitario: 22000, total: 22000, metodoPago: 'efectivo' },
+  { id: 'V-028', fecha: '2026-05-12', hora: '16:20', cliente: 'Martina Vega', producto: 'Crew Neck Beige', talle: 'XL', cantidad: 3, precioUnitario: 19000, total: 57000, metodoPago: 'tarjeta' },
+  { id: 'V-027', fecha: '2026-05-11', hora: '12:05', cliente: 'Federico Rojas', producto: 'Rompevientos Negro', talle: 'M', cantidad: 1, precioUnitario: 35000, total: 35000, metodoPago: 'mercadopago' },
+  { id: 'V-026', fecha: '2026-05-11', hora: '10:30', cliente: 'Luciana Prieto', producto: 'Buzo Básico Negro', talle: 'S', cantidad: 1, precioUnitario: 18500, total: 18500, metodoPago: 'transferencia' },
+  { id: 'V-025', fecha: '2026-05-10', hora: '19:00', cliente: 'Emiliano Costa', producto: 'Hoodie Gris Oversize', talle: 'L', cantidad: 1, precioUnitario: 22000, total: 22000, metodoPago: 'efectivo' },
+  { id: 'V-024', fecha: '2026-05-10', hora: '15:45', cliente: 'Valentina López', producto: 'Crew Neck Beige', talle: 'M', cantidad: 2, precioUnitario: 19000, total: 38000, metodoPago: 'mercadopago' },
+]

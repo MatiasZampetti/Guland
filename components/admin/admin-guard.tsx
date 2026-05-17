@@ -2,19 +2,19 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/lib/auth-store'
+import { useUser } from '@/lib/hooks/use-user'
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { user, adminSessionActive } = useAuthStore()
+  const { user, profile, loading } = useUser()
 
   useEffect(() => {
-    if (!user || !user.isAdmin || !adminSessionActive) {
+    if (!loading && (!user || !profile?.is_admin)) {
       router.replace('/')
     }
-  }, [user, adminSessionActive, router])
+  }, [loading, user, profile, router])
 
-  if (!user || !user.isAdmin || !adminSessionActive) return null
+  if (loading || !user || !profile?.is_admin) return null
 
   return <>{children}</>
 }
