@@ -1,19 +1,11 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Category, Size } from '@/types'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 
 type ShopFilter = 'destacados' | 'new-drops' | 'sale' | null
-
-const categories: { slug: Category; label: string }[] = [
-  { slug: 'buzos', label: 'Buzos' },
-  { slug: 'camperas', label: 'Camperas' },
-  { slug: 'sweaters', label: 'Sweaters' },
-  { slug: 'remeras', label: 'Remeras' },
-  { slug: 'jeans', label: 'Jeans' },
-  { slug: 'bermudas', label: 'Bermudas' },
-]
 
 const sizes: Size[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
 
@@ -38,6 +30,14 @@ export function FiltersSidebar({
   onClear,
   hideHeader,
 }: FiltersSidebarProps) {
+  const [categories, setCategories] = useState<{ slug: string; label: string }[]>([])
+
+  useEffect(() => {
+    fetch('/api/categories')
+      .then((r) => r.json())
+      .then((data) => setCategories(data.map((c: { slug: string; label: string }) => ({ slug: c.slug, label: c.label }))))
+  }, [])
+
   const hasFilters = selectedCategory || selectedSizes.length > 0 || selectedFilter
 
   return (

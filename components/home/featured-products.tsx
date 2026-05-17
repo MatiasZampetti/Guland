@@ -1,14 +1,23 @@
 import Link from 'next/link'
-import { featuredProducts } from '@/lib/mock-data'
+import { createClient } from '@/lib/supabase/server'
+import { dbToProduct, type DBProduct } from '@/lib/db-mapper'
 import { ProductCard } from '@/components/shop/product-card'
 import { AnimatedTitle } from '@/components/ui/animated-title'
 
-export function FeaturedProducts() {
+export async function FeaturedProducts() {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('products')
+    .select('*')
+    .eq('featured', true)
+    .order('created_at', { ascending: false })
+    .limit(4)
+
+  const products = (data ?? []).map((p) => dbToProduct(p as DBProduct))
+
   return (
     <section id="destacados" className="bg-[#0f0f0f] px-4 sm:px-5 py-12 sm:py-16">
       <div className="mx-auto max-w-7xl">
-
-        {/* Header */}
         <div className="mb-6 sm:mb-8 flex items-baseline justify-between gap-4">
           <AnimatedTitle
             className="text-4xl sm:text-5xl leading-none text-white md:text-7xl"
@@ -24,9 +33,8 @@ export function FeaturedProducts() {
           </Link>
         </div>
 
-        {/* Grid */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4">
-          {featuredProducts.slice(0, 4).map((product) => (
+          {products.map((product) => (
             <ProductCard key={product.id} product={product} dark />
           ))}
         </div>

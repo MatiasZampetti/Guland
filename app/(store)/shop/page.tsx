@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { products } from '@/lib/mock-data'
+import { dbToProduct, type DBProduct } from '@/lib/db-mapper'
+import { type Product } from '@/types'
 import { Category, Size } from '@/types'
 import { ProductGrid } from '@/components/shop/product-grid'
 import { FiltersSidebar } from '@/components/shop/filters-sidebar'
@@ -22,9 +23,18 @@ function ShopContent() {
   const searchParams = useSearchParams()
   const initialFilter = (searchParams.get('filter') as ShopFilter) ?? null
 
+  const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [selectedSizes, setSelectedSizes] = useState<Size[]>([])
   const [selectedFilter, setSelectedFilter] = useState<ShopFilter>(initialFilter)
+
+  useEffect(() => {
+    fetch('/api/products')
+      .then((r) => r.json())
+      .then((data: DBProduct[]) => { setAllProducts(data.map(dbToProduct)); setLoadingProducts(false) })
+      .catch(() => setLoadingProducts(false))
+  }, [])
 
   const handleSizeToggle = (size: Size) => {
     setSelectedSizes((prev) =>
@@ -38,7 +48,7 @@ function ShopContent() {
     setSelectedFilter(null)
   }
 
-  const filtered = products.filter((p) => {
+  const filtered = allProducts.filter((p) => {
     const matchesCat = selectedCategory ? p.category === selectedCategory : true
     const matchesSize = selectedSizes.length > 0 ? selectedSizes.some((s) => p.sizes.includes(s)) : true
     const matchesFilter =
@@ -71,7 +81,6 @@ function ShopContent() {
           </p>
         </div>
 
-        {/* Botón filtros — solo mobile */}
         <Sheet>
           <SheetTrigger className="md:hidden shrink-0 flex items-center gap-2 rounded border border-white/20 px-3 py-2 text-xs font-semibold tracking-widest text-white/70 hover:border-white hover:text-white transition-colors min-h-[44px]">
             <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -87,12 +96,17 @@ function ShopContent() {
       </div>
 
       <div className="flex gap-12">
-        {/* Sidebar — solo desktop */}
         <div className="hidden md:block">
           <FiltersSidebar {...sidebarProps} />
         </div>
         <div className="flex-1 min-w-0">
-          <ProductGrid products={filtered} />
+          {loadingProducts ? (
+            <div className="flex items-center justify-center py-24">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+            </div>
+          ) : (
+            <ProductGrid products={filtered} />
+          )}
         </div>
       </div>
     </div>

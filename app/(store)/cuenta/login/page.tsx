@@ -3,31 +3,33 @@
 import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useAuthStore } from '@/lib/auth-store'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/'
-  const { login } = useAuthStore()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState(false)
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setError(false)
-    await new Promise((r) => setTimeout(r, 400))
-    const result = login(email, password)
+    setError('')
+
+    const supabase = createClient()
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+
     setLoading(false)
-    if (result === 'ok') {
-      router.push(redirect)
+    if (authError) {
+      setError('Email o contraseña incorrectos.')
     } else {
-      setError(true)
+      router.push(redirect)
+      router.refresh()
     }
   }
 
@@ -65,7 +67,7 @@ function LoginForm() {
           />
         </div>
 
-        {error && <p className="text-xs text-red-500">Email o contraseña incorrectos.</p>}
+        {error && <p className="text-xs text-red-500">{error}</p>}
 
         <Button
           type="submit"
@@ -82,13 +84,6 @@ function LoginForm() {
           Registrate
         </Link>
       </p>
-
-      <div className="mt-8 rounded-lg border border-dashed border-white/10 p-4 text-xs text-white/30">
-        <p className="font-semibold">Cuentas de prueba:</p>
-        <p className="mt-1">Admin: admin@guland.com / admin123</p>
-        <p>Demo: demo@guland.com / demo123</p>
-        <p className="mt-1 text-white/20">Contraseña del panel: admin2024</p>
-      </div>
     </div>
   )
 }

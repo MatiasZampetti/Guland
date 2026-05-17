@@ -5,7 +5,7 @@ import { ScrollToTop } from '@/components/layout/scroll-top'
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-[#0f0f0f] text-white overflow-x-hidden">
+    <div className="flex min-h-screen flex-col bg-[#0f0f0f] text-white">
       <ScrollToTop />
       <Navbar />
       <main className="flex-1 pt-16 min-w-0 overflow-x-hidden">{children}</main>

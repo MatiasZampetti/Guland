@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { notFound } from 'next/navigation'
-import { products, categories } from '@/lib/mock-data'
-import { Category, Size } from '@/types'
+import { dbToProduct, type DBProduct } from '@/lib/db-mapper'
+import { type Product, Category, Size } from '@/types'
 import { ProductGrid } from '@/components/shop/product-grid'
 import { FiltersSidebar } from '@/components/shop/filters-sidebar'
 import { SlidersHorizontal } from 'lucide-react'
@@ -26,11 +26,26 @@ export default function CategoryPage({ params }: Props) {
   const { category } = use(params)
   const router = useRouter()
 
-  const categoryData = categories.find((c) => c.slug === category)
-  if (!categoryData) notFound()
-
+  const [categoryLabel, setCategoryLabel] = useState<string | null>(null)
+  const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [notFoundFlag, setNotFoundFlag] = useState(false)
   const [selectedSizes, setSelectedSizes] = useState<Size[]>([])
   const [selectedFilter, setSelectedFilter] = useState<ShopFilter>(null)
+
+  useEffect(() => {
+    // Validate category and load products in parallel
+    Promise.all([
+      fetch('/api/categories').then((r) => r.json()),
+      fetch(`/api/products?category_slug=${category}`).then((r) => r.json()),
+    ]).then(([cats, prods]) => {
+      const cat = cats.find((c: { slug: string; label: string }) => c.slug === category)
+      if (!cat) { setNotFoundFlag(true); return }
+      setCategoryLabel(cat.label)
+      setAllProducts((prods as DBProduct[]).map(dbToProduct))
+    })
+  }, [category])
+
+  if (notFoundFlag) notFound()
 
   const handleSizeToggle = (size: Size) =>
     setSelectedSizes((prev) =>
@@ -48,15 +63,14 @@ export default function CategoryPage({ params }: Props) {
     setSelectedFilter(null)
   }
 
-  const filtered = products.filter((p) => {
-    const matchesCat = p.category === (category as Category)
+  const filtered = allProducts.filter((p) => {
     const matchesSize = selectedSizes.length > 0 ? selectedSizes.some((s) => p.sizes.includes(s)) : true
     const matchesFilter =
       selectedFilter === 'destacados' ? !!p.featured :
       selectedFilter === 'new-drops' ? !!p.isNew :
       selectedFilter === 'sale' ? !!p.isOnSale :
       true
-    return matchesCat && matchesSize && matchesFilter
+    return matchesSize && matchesFilter
   })
 
   const sidebarProps = {
@@ -74,14 +88,13 @@ export default function CategoryPage({ params }: Props) {
       <div className="mb-6 sm:mb-8 md:mb-10 flex items-end justify-between gap-4">
         <div>
           <h1 className="text-5xl sm:text-7xl leading-none md:text-9xl" style={{ fontFamily: 'var(--font-bebas)' }}>
-            {categoryData.label.toUpperCase()}
+            {categoryLabel ? categoryLabel.toUpperCase() : category.toUpperCase()}
           </h1>
           <p className="mt-1 text-xs font-semibold tracking-widest text-white/40">
             {filtered.length} PRODUCTOS
           </p>
         </div>
 
-        {/* Botón filtros — solo mobile */}
         <Sheet>
           <SheetTrigger className="md:hidden shrink-0 flex items-center gap-2 rounded border border-white/20 px-3 py-2 text-xs font-semibold tracking-widest text-white/70 hover:border-white hover:text-white transition-colors min-h-[44px]">
             <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -97,7 +110,6 @@ export default function CategoryPage({ params }: Props) {
       </div>
 
       <div className="flex gap-8 sm:gap-12">
-        {/* Sidebar — solo desktop */}
         <div className="hidden md:block">
           <FiltersSidebar {...sidebarProps} />
         </div>

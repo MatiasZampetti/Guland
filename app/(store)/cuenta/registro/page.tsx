@@ -3,12 +3,11 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/lib/auth-store'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
 export default function RegistroPage() {
   const router = useRouter()
-  const { register } = useAuthStore()
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -20,18 +19,37 @@ export default function RegistroPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    if (password !== confirm) {
-      setError('Las contraseñas no coinciden.')
-      return
-    }
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres.')
-      return
-    }
+
+    if (password !== confirm) { setError('Las contraseñas no coinciden.'); return }
+    if (password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres.'); return }
+
     setLoading(true)
-    await new Promise((r) => setTimeout(r, 400))
-    register(name, email, password)
+
+    // Crear usuario via API (usa service role para confirmar email automáticamente)
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    })
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.error || 'Error al crear la cuenta.')
+      setLoading(false)
+      return
+    }
+
+    // Login automático después del registro
+    const supabase = createClient()
+    const { error: loginError } = await supabase.auth.signInWithPassword({ email, password })
+    if (loginError) {
+      setError('Cuenta creada. Podés iniciar sesión ahora.')
+      setLoading(false)
+      router.push('/cuenta/login')
+      return
+    }
     router.push('/')
+    router.refresh()
   }
 
   return (
