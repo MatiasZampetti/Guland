@@ -32,8 +32,7 @@ function LoginForm() {
     if (authError) {
       setError('Email o contraseña incorrectos.')
     } else {
-      router.push(redirect)
-      router.refresh()
+      window.location.href = redirect
     }
   }
 
