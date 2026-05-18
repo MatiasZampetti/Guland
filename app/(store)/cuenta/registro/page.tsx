@@ -29,7 +29,10 @@ export default function RegistroPage() {
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } },
+      options: {
+        data: { name },
+        emailRedirectTo: `${window.location.origin}/cuenta/login?confirmed=true&email=${encodeURIComponent(email)}`,
+      },
     })
 
     if (signUpError) {
