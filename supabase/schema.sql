@@ -149,6 +149,36 @@ create policy "Admins can do everything on sales" on public.sales
     exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
   );
 
+-- FAQ Categories
+create table public.faq_categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  created_at timestamptz not null default now()
+);
+alter table public.faq_categories enable row level security;
+create policy "Anyone can read faq categories" on public.faq_categories
+  for select using (true);
+create policy "Admins can manage faq categories" on public.faq_categories
+  for all using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+-- FAQ Items
+create table public.faq_items (
+  id uuid primary key default gen_random_uuid(),
+  category_id uuid not null references public.faq_categories on delete cascade,
+  question text not null,
+  answer text not null,
+  created_at timestamptz not null default now()
+);
+alter table public.faq_items enable row level security;
+create policy "Anyone can read faq items" on public.faq_items
+  for select using (true);
+create policy "Admins can manage faq items" on public.faq_items
+  for all using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
 -- Storage buckets
 insert into storage.buckets (id, name, public) values ('products', 'products', true);
 insert into storage.buckets (id, name, public) values ('categories', 'categories', true);

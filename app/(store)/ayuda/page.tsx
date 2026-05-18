@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { AnimatedTitle } from '@/components/ui/animated-title'
 import { ChevronDown } from 'lucide-react'
-import { useFaqStore } from '@/lib/faq-store'
+import type { FaqCategory } from '@/lib/faq-store'
 
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false)
@@ -28,7 +28,11 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 }
 
 export default function AyudaPage() {
-  const categories = useFaqStore((s) => s.categories)
+  const [categories, setCategories] = useState<FaqCategory[]>([])
+
+  useEffect(() => {
+    fetch('/api/faqs').then((r) => r.json()).then(setCategories)
+  }, [])
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-5 py-8 sm:py-12">

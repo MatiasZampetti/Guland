@@ -110,9 +110,9 @@ export function Hero() {
                 letterSpacing: '0.15em',
               }}
             >
-              {'GULAND CLOTHES • NUEVA COLECCIÓN • INVIERNO 2026 • SIN MOLDES • ENVÍO GRATIS +$30K • '}
-              {'GULAND CLOTHES • NUEVA COLECCIÓN • INVIERNO 2026 • SIN MOLDES • ENVÍO GRATIS +$30K • '}
-              {'GULAND CLOTHES • NUEVA COLECCIÓN • INVIERNO 2026 • SIN MOLDES • ENVÍO GRATIS +$30K • '}
+              {'GULAND CLOTHES • ENVÍO GRATIS +$100.000 • 3 CUOTAS SIN INTERÉS • DESCUENTO EN EFECTIVO Y TRANSFERENCIA • '}
+              {'GULAND CLOTHES • ENVÍO GRATIS +$100.000 • 3 CUOTAS SIN INTERÉS • DESCUENTO EN EFECTIVO Y TRANSFERENCIA • '}
+              {'GULAND CLOTHES • ENVÍO GRATIS +$100.000 • 3 CUOTAS SIN INTERÉS • DESCUENTO EN EFECTIVO Y TRANSFERENCIA • '}
             </span>
           ))}
         </div>

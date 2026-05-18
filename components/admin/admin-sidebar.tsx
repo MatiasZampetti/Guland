@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, Package, ShoppingCart, Users,
-  TrendingUp, PlusCircle, ExternalLink, ChevronLeft, ChevronRight,
+  TrendingUp, PlusCircle, ExternalLink, ChevronLeft, ChevronRight, HelpCircle,
 } from 'lucide-react'
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
   { href: '/admin/pedidos', label: 'Pedidos', icon: ShoppingCart },
   { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
   { href: '/admin/finanzas', label: 'Finanzas', icon: TrendingUp },
+  { href: '/admin/ayuda', label: 'FAQs', icon: HelpCircle },
 ]
 
 export function AdminSidebar() {
