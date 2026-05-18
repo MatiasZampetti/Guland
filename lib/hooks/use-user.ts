@@ -21,28 +21,15 @@ export function useUser() {
 
   useEffect(() => {
     const client = supabase.current!
+    let mounted = true
 
     async function fetchProfile(userId: string) {
       const { data } = await client.from('profiles').select('*').eq('id', userId).single()
-      setProfile(data ?? null)
+      if (mounted) setProfile(data ?? null)
     }
-
-    async function init() {
-      const { data: { session }, error } = await client.auth.getSession()
-      if (error) {
-        await client.auth.signOut()
-        setLoading(false)
-        return
-      }
-      const u = session?.user ?? null
-      setUser(u)
-      if (u) await fetchProfile(u.id)
-      setLoading(false)
-    }
-
-    init()
 
     const { data: { subscription } } = client.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return
       const u = session?.user ?? null
       setUser(u)
       if (u) {
@@ -50,21 +37,19 @@ export function useUser() {
       } else {
         setProfile(null)
       }
-      setLoading(false)
+      if (mounted) setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
-  function logout() {
-    // Clear any localStorage tokens Supabase may have stored client-side
-    if (typeof window !== 'undefined') {
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('sb-')) localStorage.removeItem(key)
-      })
-      // Navigate to the server-side logout route which clears cookies and redirects to /
-      window.location.href = '/api/auth/logout'
-    }
+  async function logout() {
+    const client = supabase.current!
+    await client.auth.signOut()
+    window.location.href = '/'
   }
 
   return { user, profile, loading, logout }
