@@ -27,6 +27,16 @@ export function useUser() {
       setProfile(data ?? null)
     }
 
+    async function init() {
+      const { data: { session } } = await client.auth.getSession()
+      const u = session?.user ?? null
+      setUser(u)
+      if (u) await fetchProfile(u.id)
+      setLoading(false)
+    }
+
+    init()
+
     const { data: { subscription } } = client.auth.onAuthStateChange(async (_event, session) => {
       const u = session?.user ?? null
       setUser(u)
