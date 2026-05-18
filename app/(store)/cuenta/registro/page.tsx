@@ -31,7 +31,7 @@ export default function RegistroPage() {
       password,
       options: {
         data: { name },
-        emailRedirectTo: `${window.location.origin}/cuenta/login?confirmed=true&email=${encodeURIComponent(email)}`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?email=${encodeURIComponent(email)}`,
       },
     })
 
