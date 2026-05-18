@@ -67,47 +67,27 @@ export default function RegistroPage() {
   if (step === 'verify') {
     return (
       <div className="flex min-h-[80vh] items-center justify-center px-4 py-16">
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-sm text-center">
           <div className="mb-8">
             <p className="text-xs font-bold tracking-widest text-white/40">VERIFICACIÓN</p>
             <h1 className="mt-1 text-5xl leading-none" style={{ fontFamily: 'var(--font-bebas)' }}>
               REVISÁ TU EMAIL
             </h1>
-            <p className="mt-3 text-sm text-white/50">
-              Te enviamos un código de 6 dígitos a <span className="text-white font-semibold">{email}</span>. Ingresalo para confirmar tu cuenta.
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-white/5 px-6 py-8 space-y-3">
+            <p className="text-sm text-white/60">
+              Te enviamos un email de confirmación a
+            </p>
+            <p className="text-base font-semibold text-white">{email}</p>
+            <p className="text-sm text-white/50 pt-2">
+              Hacé click en el botón del email para activar tu cuenta. Revisá también la carpeta de spam.
             </p>
           </div>
 
-          <form onSubmit={handleVerify} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold tracking-wider text-white/50">CÓDIGO DE VERIFICACIÓN</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                required
-                autoFocus
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                placeholder="000000"
-                className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] text-white outline-none placeholder:text-white/20 focus:border-red-600"
-              />
-            </div>
-
-            {error && <p className="text-xs text-red-500">{error}</p>}
-
-            <Button
-              type="submit"
-              disabled={loading || otp.length < 6}
-              className="mt-2 w-full rounded-lg bg-red-700 py-6 text-xs font-bold tracking-widest text-white hover:bg-red-800 disabled:opacity-50"
-            >
-              {loading ? 'VERIFICANDO...' : 'CONFIRMAR CUENTA'}
-            </Button>
-          </form>
-
           <button
-            onClick={() => { setStep('form'); setOtp(''); setError('') }}
-            className="mt-6 w-full text-center text-sm text-white/40 hover:text-white/60 transition-colors"
+            onClick={() => { setStep('form'); setError('') }}
+            className="mt-8 text-sm text-white/40 hover:text-white/60 transition-colors"
           >
             ← Volver al formulario
           </button>

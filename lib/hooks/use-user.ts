@@ -28,7 +28,12 @@ export function useUser() {
     }
 
     async function init() {
-      const { data: { session } } = await client.auth.getSession()
+      const { data: { session }, error } = await client.auth.getSession()
+      if (error) {
+        await client.auth.signOut()
+        setLoading(false)
+        return
+      }
       const u = session?.user ?? null
       setUser(u)
       if (u) await fetchProfile(u.id)
