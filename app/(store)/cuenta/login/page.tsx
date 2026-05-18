@@ -59,13 +59,13 @@ function LoginForm() {
               ¡CUENTA CONFIRMADA!
             </h2>
             <p className="mt-2 text-sm text-white/50">
-              Tu cuenta fue verificada exitosamente. Ya podés iniciar sesión.
+              Tu cuenta fue verificada exitosamente.
             </p>
             <button
-              onClick={() => setShowPopup(false)}
+              onClick={() => { window.location.href = '/' }}
               className="mt-6 w-full rounded-lg bg-red-700 py-3 text-xs font-bold tracking-widest text-white hover:bg-red-800 transition-colors"
             >
-              INICIAR SESIÓN
+              IR A LA TIENDA
             </button>
           </div>
         </div>
