@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -19,6 +19,15 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPopup, setShowPopup] = useState(confirmed)
+
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash.includes('error_code=otp_expired') || hash.includes('error=access_denied')) {
+      setError('El link de confirmación expiró. Registrate de nuevo.')
+    } else if (hash.includes('access_token=') && confirmed) {
+      setShowPopup(true)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
