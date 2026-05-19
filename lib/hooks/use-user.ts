@@ -32,12 +32,15 @@ export function useUser() {
       if (!mounted) return
       const u = session?.user ?? null
       setUser(u)
-      if (u) {
-        await fetchProfile(u.id)
-      } else {
-        setProfile(null)
+      try {
+        if (u) {
+          await fetchProfile(u.id)
+        } else {
+          setProfile(null)
+        }
+      } finally {
+        if (mounted) setLoading(false)
       }
-      if (mounted) setLoading(false)
     })
 
     return () => {

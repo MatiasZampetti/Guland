@@ -22,12 +22,28 @@ function LoginForm() {
 
   useEffect(() => {
     const hash = window.location.hash
+
     if (hash.includes('error_code=otp_expired') || hash.includes('error=access_denied')) {
       setError('El link de confirmación expiró. Registrate de nuevo.')
-    } else if (hash.includes('access_token=') && confirmed) {
-      setShowPopup(true)
+      return
     }
-  }, [])
+
+    if (confirmed) {
+      setShowPopup(true)
+
+      if (hash.includes('access_token=')) {
+        // Esperar a que Supabase procese el hash y establezca la sesión, luego redirigir
+        const supabase = createClient()
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (session && event === 'SIGNED_IN') {
+            subscription.unsubscribe()
+            window.location.href = '/'
+          }
+        })
+        return () => subscription.unsubscribe()
+      }
+    }
+  }, [confirmed])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
