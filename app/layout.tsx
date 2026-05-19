@@ -10,7 +10,7 @@ const russoOne = Russo_One({ weight: '400', subsets: ['latin'], variable: '--fon
 const leagueSpartan = League_Spartan({ weight: '900', subsets: ['latin'], variable: '--font-league' })
 
 export const metadata: Metadata = {
-  title: 'Guland — Streetwear Unisex',
+  title: 'Guland',
   description: 'Ropa para los que no siguen tendencias, las crean.',
 }
 
