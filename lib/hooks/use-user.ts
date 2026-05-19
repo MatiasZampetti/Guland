@@ -28,9 +28,8 @@ export function useUser() {
       if (mounted) setProfile(data ?? null)
     }
 
-    const { data: { subscription } } = client.auth.onAuthStateChange(async (_event, session) => {
+    async function handleSession(u: User | null) {
       if (!mounted) return
-      const u = session?.user ?? null
       setUser(u)
       try {
         if (u) {
@@ -41,6 +40,17 @@ export function useUser() {
       } finally {
         if (mounted) setLoading(false)
       }
+    }
+
+    // Load initial session synchronously from storage (no network)
+    client.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session?.user ?? null)
+    })
+
+    // Subscribe to future auth changes (sign in, sign out, token refresh)
+    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') return
+      handleSession(session?.user ?? null)
     })
 
     return () => {
