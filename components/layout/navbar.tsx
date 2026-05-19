@@ -2,22 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { ShoppingBag, User, LogOut, LayoutDashboard, ChevronDown, Menu, X } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { useCartStore } from '@/lib/store'
 import { useUser } from '@/lib/hooks/use-user'
-import { createClient } from '@/lib/supabase/client'
 
 export function Navbar() {
-  const router = useRouter()
   const pathname = usePathname()
   const isHome = pathname === '/'
 
@@ -103,21 +93,6 @@ export function Navbar() {
     document.addEventListener('click', handler)
     return () => document.removeEventListener('click', handler)
   }, [accountOpen])
-
-  const [adminModalOpen, setAdminModalOpen] = useState(false)
-  const [adminPassword, setAdminPassword] = useState('')
-  const [adminError, setAdminError] = useState(false)
-
-  const handleAdminLogin = async () => {
-    if (adminPassword !== process.env.NEXT_PUBLIC_ADMIN_PASSWORD && adminPassword !== 'admin2024') {
-      setAdminError(true)
-      return
-    }
-    setAdminModalOpen(false)
-    setAdminPassword('')
-    setAdminError(false)
-    router.push('/admin')
-  }
 
   const handleLogout = () => logout()
 
@@ -247,7 +222,7 @@ export function Navbar() {
                       </div>
                       <Link href="/cuenta" onClick={() => setAccountOpen(false)} className="block px-3 py-2.5 text-sm text-white/80 hover:bg-white/5">Mi cuenta</Link>
                       {safeProfile?.is_admin && (
-                        <Link href="#" onClick={(e) => { e.preventDefault(); setAccountOpen(false); setAdminError(false); setAdminPassword(''); setAdminModalOpen(true) }} className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/80 hover:bg-white/5">
+                        <Link href="/admin" onClick={() => setAccountOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/80 hover:bg-white/5">
                           <LayoutDashboard className="h-3.5 w-3.5" />
                           Panel de administración
                         </Link>
@@ -348,35 +323,6 @@ export function Navbar() {
         </div>
       )}
 
-      {/* Modal admin */}
-      <Dialog open={adminModalOpen} onOpenChange={setAdminModalOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle style={{ fontFamily: 'var(--font-bebas)', fontSize: '1.6rem', lineHeight: 1 }}>
-              PANEL DE ADMINISTRACIÓN
-            </DialogTitle>
-            <DialogDescription>
-              Ingresá la contraseña de administrador para continuar.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-2 flex flex-col gap-4">
-            <input
-              type="password"
-              placeholder="Contraseña de administrador"
-              value={adminPassword}
-              onChange={(e) => { setAdminPassword(e.target.value); setAdminError(false) }}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
-              className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-black"
-              autoFocus
-            />
-            {adminError && <p className="text-xs text-red-500">Contraseña incorrecta. Intentá de nuevo.</p>}
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setAdminModalOpen(false)} className="flex-1 rounded-lg text-xs">Cancelar</Button>
-              <Button onClick={handleAdminLogin} className="flex-1 rounded-lg bg-black text-xs text-white hover:bg-gray-800">Ingresar</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   )
 }
