@@ -1,16 +1,15 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/supabase/require-admin'
 import { NextResponse } from 'next/server'
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { error: authError } = await requireAdmin()
+  if (authError) return authError
 
+  const { id } = await params
   const body = await request.json()
   const admin = createAdminClient()
   const { data, error } = await admin
@@ -28,11 +27,10 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { error: authError } = await requireAdmin()
+  if (authError) return authError
 
+  const { id } = await params
   const admin = createAdminClient()
   const { error } = await admin.from('products').delete().eq('id', id)
 

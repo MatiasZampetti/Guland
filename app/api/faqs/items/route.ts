@@ -1,11 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/supabase/require-admin'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { error: authError } = await requireAdmin()
+  if (authError) return authError
 
   const { categoryId, q, a } = await request.json()
   if (!categoryId || !q || !a) return NextResponse.json({ error: 'Faltan campos' }, { status: 400 })

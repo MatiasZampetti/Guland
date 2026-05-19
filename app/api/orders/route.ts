@@ -1,12 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/supabase/require-admin'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { error: authError } = await requireAdmin()
+  if (authError) return authError
 
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('orders')
     .select('*, order_items(*)')

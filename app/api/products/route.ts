@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/supabase/require-admin'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -26,9 +27,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { error: authError } = await requireAdmin()
+  if (authError) return authError
 
   const body = await request.json()
   const { slug, name, price, category_slug, description, images, sizes, featured, is_new, is_on_sale } = body
