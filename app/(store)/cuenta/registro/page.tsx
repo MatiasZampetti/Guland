@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { AlertCircle, X } from 'lucide-react'
 
 export default function RegistroPage() {
   const router = useRouter()
@@ -17,6 +18,7 @@ export default function RegistroPage() {
   const [otp, setOtp] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showExistsPopup, setShowExistsPopup] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,7 +28,7 @@ export default function RegistroPage() {
 
     setLoading(true)
     const supabase = createClient()
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -38,6 +40,13 @@ export default function RegistroPage() {
     if (signUpError) {
       setError(signUpError.message)
       setLoading(false)
+      return
+    }
+
+    // Supabase devuelve identities vacío cuando el email ya está registrado
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      setLoading(false)
+      setShowExistsPopup(true)
       return
     }
 
@@ -101,6 +110,39 @@ export default function RegistroPage() {
 
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4 py-16">
+
+      {/* Popup: email ya registrado */}
+      {showExistsPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowExistsPopup(false)} />
+          <div className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#0f0f0f] p-8 text-center shadow-2xl">
+            <button
+              onClick={() => setShowExistsPopup(false)}
+              className="absolute right-4 top-4 text-white/30 hover:text-white transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex justify-center mb-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500/15">
+                <AlertCircle className="h-7 w-7 text-red-500" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-bebas)', letterSpacing: '0.05em' }}>
+              EMAIL YA REGISTRADO
+            </h2>
+            <p className="mt-2 text-sm text-white/50">
+              Este correo ya está vinculado a una cuenta existente.
+            </p>
+            <Link
+              href={`/cuenta/login?email=${encodeURIComponent(email)}`}
+              className="mt-6 inline-block w-full rounded-lg bg-red-700 py-3 text-xs font-bold tracking-widest text-white hover:bg-red-800 transition-colors"
+            >
+              IR A INICIAR SESIÓN
+            </Link>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-sm">
         <div className="mb-8">
           <p className="text-xs font-bold tracking-widest text-white/40">CUENTA</p>
