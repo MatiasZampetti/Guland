@@ -78,7 +78,7 @@ export default function RegistroPage() {
 
   if (step === 'verify') {
     return (
-      <div className="flex min-h-[80vh] items-center justify-center px-4 py-16">
+      <div className="flex min-h-[80vh] items-center justify-center px-4 py-8 sm:py-16">
         <div className="w-full max-w-sm text-center">
           <div className="mb-8">
             <p className="text-xs font-bold tracking-widest text-white/40">VERIFICACIÓN</p>
@@ -109,7 +109,7 @@ export default function RegistroPage() {
   }
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center px-4 py-16">
+    <div className="flex min-h-[80vh] items-center justify-center px-4 py-8 sm:py-16">
 
       {/* Popup: email ya registrado */}
       {showExistsPopup && (

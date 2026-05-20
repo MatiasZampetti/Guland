@@ -175,3 +175,33 @@
   .admin-sidebar-item   { padding-top: 5px; padding-bottom: 5px; }
   .admin-sidebar-footer { padding: 4px; }
 }
+
+/* ── Hero: notebooks y pantallas con ≤768px de alto (1366×768 nativo con chrome del browser) ──
+   A 1366px ancho el h1 sería 177px × 2 líneas = 311px, demasiado para 680px disponibles.
+   Bajando a 9.5vw el bloque entra con ~109px de separación del navbar. */
+@media (max-height: 768px) and (min-width: 768px) {
+  .hero-h1 { font-size: clamp(32px, 9.5vw, 130px) !important; }
+}
+
+/* ── Hero: notebooks comunes — 1366×650, 1280×650, Chrome+bookmarks en 1366×768 (~640-660px útiles) ──
+   A 660px de alto el bloque de texto con márgenes originales empieza a ~65px del top → roza el navbar.
+   Con esta query el bloque se reduce y empieza a ~200px, dejando margen cómodo. */
+@media (max-height: 660px) and (min-width: 768px) {
+  .hero-h1        { font-size: clamp(28px, 9vw, 110px) !important; }
+  .hero-text-wrap { padding-bottom: 2rem !important; }
+  .hero-ver-ahora { margin-bottom: 0.25rem !important; }
+  .hero-guland    { margin-top: 0.75rem !important; font-size: clamp(14px, 3.5vw, 52px) !important; }
+  .hero-tagline   { margin-top: 0.25rem !important; }
+  .hero-comprar   { margin-top: 0.5rem  !important; }
+}
+
+/* ── Hero: DPI 150% en 1366×768 → viewport CSS ~911×512px ──
+   Reducción máxima; se oculta el tagline (texto decorativo de apoyo, ya oculto en landscape móvil). */
+@media (max-height: 520px) and (min-width: 768px) {
+  .hero-h1        { font-size: clamp(24px, 8.5vw, 90px) !important; }
+  .hero-text-wrap { padding-bottom: 1.75rem !important; }
+  .hero-ver-ahora { margin-bottom: 0.125rem !important; }
+  .hero-guland    { margin-top: 0.5rem !important; font-size: clamp(12px, 3vw, 40px) !important; }
+  .hero-tagline   { display: none !important; }
+  .hero-comprar   { margin-top: 0.375rem !important; }
+}
