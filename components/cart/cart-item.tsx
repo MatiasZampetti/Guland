@@ -10,7 +10,13 @@ interface CartItemProps {
 }
 
 export function CartItem({ item }: CartItemProps) {
-  const { updateQuantity, removeItem } = useCartStore()
+  const { updateQuantity, removeItem, paymentMethod } = useCartStore()
+
+  const unitPrice = paymentMethod === 'efectivo_transferencia'
+    ? Math.round(item.product.price * 0.85)
+    : item.product.price
+
+  const lineTotal = unitPrice * item.quantity
 
   return (
     <div className="flex gap-3 sm:gap-4 py-4">
@@ -56,9 +62,14 @@ export function CartItem({ item }: CartItemProps) {
               <Plus className="h-3 w-3" />
             </Button>
           </div>
-          <p className="text-sm font-light shrink-0">
-            ${(item.product.price * item.quantity).toLocaleString('es-AR')}
-          </p>
+          <div className="text-right shrink-0">
+            <p className="text-sm font-light">${lineTotal.toLocaleString('es-AR')}</p>
+            {paymentMethod === 'efectivo_transferencia' && (
+              <p className="text-[10px] text-white/30 line-through">
+                ${(item.product.price * item.quantity).toLocaleString('es-AR')}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

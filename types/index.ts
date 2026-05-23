@@ -2,6 +2,12 @@ export type Size = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL'
 
 export type Category = string
 
+export type PaymentMethod =
+  | 'tarjeta_1pago'
+  | 'tarjeta_3cuotas'
+  | 'efectivo_transferencia'
+  | null
+
 export interface Product {
   id: string
   slug: string
