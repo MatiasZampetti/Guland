@@ -20,6 +20,7 @@ const emptyForm = {
   price: '',
   category: '',
   sizes: [] as Size[],
+  stock: {} as Record<string, number>,
   description: '',
   image1: '',
   image1File: null as File | null,
@@ -85,9 +86,10 @@ export default function AdminProductosPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<{ slug: string; label: string; image_url: string }[]>([])
   const [activePanel, setActivePanel] = useState<ActivePanel>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [catForm, setCatForm] = useState(emptyCatForm)
-  const [lastAdded, setLastAdded] = useState<string | null>(null)
+  const [lastAdded, setLastAdded] = useState<{ name: string; action: 'added' | 'updated' } | null>(null)
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('todos')
   const [submitting, setSubmitting] = useState(false)
@@ -108,10 +110,52 @@ export default function AdminProductosPage() {
   function togglePanel(panel: ActivePanel) {
     setActivePanel((v) => (v === panel ? null : panel))
     setLastAdded(null)
+    if (editingId) {
+      setEditingId(null)
+      setForm(emptyForm)
+    }
+  }
+
+  function startEdit(product: Product) {
+    const visibilidad: Visibilidad = product.isNew ? 'new' : product.isOnSale ? 'sale' : 'tienda'
+    setForm({
+      name: product.name,
+      price: String(product.price),
+      category: product.category,
+      sizes: product.sizes as Size[],
+      stock: product.stock ?? {},
+      description: product.description,
+      image1: product.images[0] ?? '',
+      image1File: null,
+      image1Preview: '',
+      image2: product.images[1] ?? '',
+      image2File: null,
+      image2Preview: '',
+      visibilidad,
+      featured: product.featured ?? false,
+    })
+    setEditingId(product.id)
+    setActivePanel('producto')
+    setLastAdded(null)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function toggleSize(s: Size) {
-    setForm((f) => ({ ...f, sizes: f.sizes.includes(s) ? f.sizes.filter((x) => x !== s) : [...f.sizes, s] }))
+    setForm((f) => {
+      const hasSize = f.sizes.includes(s)
+      const newSizes = hasSize ? f.sizes.filter((x) => x !== s) : [...f.sizes, s]
+      const newStock = { ...f.stock }
+      if (hasSize) {
+        delete newStock[s]
+      } else if (!(s in newStock)) {
+        newStock[s] = 1
+      }
+      return { ...f, sizes: newSizes, stock: newStock }
+    })
+  }
+
+  function setSizeStock(size: Size, value: number) {
+    setForm((f) => ({ ...f, stock: { ...f.stock, [size]: Math.max(0, value) } }))
   }
 
   async function uploadImage(file: File, bucket: string): Promise<string> {
@@ -126,37 +170,61 @@ export default function AdminProductosPage() {
   async function handleSubmitProduct(e: React.FormEvent) {
     e.preventDefault()
     if (!form.name || !form.price || !form.category || form.sizes.length === 0) return
-    if (!form.image1 && !form.image1File) return
+    if (!editingId && !form.image1 && !form.image1File) return
     setSubmitting(true)
 
     const images: string[] = []
     if (form.image1File) images.push(await uploadImage(form.image1File, 'products'))
     else if (form.image1) images.push(form.image1)
     if (form.image2File) images.push(await uploadImage(form.image2File, 'products'))
+    else if (form.image2) images.push(form.image2)
 
-    const res = await fetch('/api/products', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        slug: slugify(form.name),
-        name: form.name,
-        price: parseInt(form.price),
-        category_slug: form.category,
-        description: form.description,
-        images,
-        sizes: form.sizes,
-        featured: form.featured,
-        is_new: form.visibilidad === 'new',
-        is_on_sale: form.visibilidad === 'sale',
-      }),
-    })
+    const stockClean = Object.fromEntries(
+      form.sizes.map((s) => [s, form.stock[s] ?? 0])
+    )
 
-    if (res.ok) {
-      const newProd = await res.json()
-      setProducts((prev) => [dbToProduct(newProd as DBProduct), ...prev])
-      setLastAdded(form.name)
-      setForm(emptyForm)
-      setActivePanel(null)
+    const payload = {
+      name: form.name,
+      price: parseInt(form.price),
+      category_slug: form.category,
+      description: form.description,
+      images,
+      sizes: form.sizes,
+      stock: stockClean,
+      featured: form.featured,
+      is_new: form.visibilidad === 'new',
+      is_on_sale: form.visibilidad === 'sale',
+    }
+
+    if (editingId) {
+      // Editar producto existente
+      const res = await fetch(`/api/products/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setProducts((prev) => prev.map((p) => p.id === editingId ? dbToProduct(updated as DBProduct) : p))
+        setLastAdded({ name: form.name, action: 'updated' })
+        setForm(emptyForm)
+        setEditingId(null)
+        setActivePanel(null)
+      }
+    } else {
+      // Nuevo producto
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: slugify(form.name), ...payload }),
+      })
+      if (res.ok) {
+        const newProd = await res.json()
+        setProducts((prev) => [dbToProduct(newProd as DBProduct), ...prev])
+        setLastAdded({ name: form.name, action: 'added' })
+        setForm(emptyForm)
+        setActivePanel(null)
+      }
     }
     setSubmitting(false)
   }
@@ -213,11 +281,19 @@ export default function AdminProductosPage() {
             Categorías
           </button>
           <button
-            onClick={() => togglePanel('producto')}
+            onClick={() => {
+              if (activePanel === 'producto') {
+                setActivePanel(null)
+                setEditingId(null)
+                setForm(emptyForm)
+              } else {
+                togglePanel('producto')
+              }
+            }}
             className="flex items-center gap-2 rounded-lg bg-[#0f0f0f] px-4 py-2.5 text-xs font-semibold tracking-wider text-white hover:bg-gray-800 transition-colors min-h-[44px]"
           >
             {activePanel === 'producto' ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {activePanel === 'producto' ? 'Cancelar' : 'Nuevo producto'}
+            {activePanel === 'producto' ? (editingId ? 'Cancelar edición' : 'Cancelar') : 'Nuevo producto'}
           </button>
         </div>
       </div>
@@ -226,8 +302,10 @@ export default function AdminProductosPage() {
         <div className="mb-5 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3.5">
           <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
           <div>
-            <p className="text-sm font-semibold text-green-800">Producto agregado</p>
-            <p className="text-xs text-green-600 mt-0.5">{lastAdded} ya aparece en el catálogo.</p>
+            <p className="text-sm font-semibold text-green-800">
+              {lastAdded.action === 'updated' ? 'Producto actualizado' : 'Producto agregado'}
+            </p>
+            <p className="text-xs text-green-600 mt-0.5">{lastAdded.name} ya aparece en el catálogo.</p>
           </div>
         </div>
       )}
@@ -298,10 +376,12 @@ export default function AdminProductosPage() {
         </div>
       )}
 
-      {/* Panel: Nuevo Producto */}
+      {/* Panel: Nuevo / Editar Producto */}
       {activePanel === 'producto' && (
         <form onSubmit={handleSubmitProduct} className="mb-8 rounded-xl bg-white p-5 sm:p-6 shadow-sm">
-          <h2 className="mb-5 text-sm font-semibold text-gray-900">Nuevo producto</h2>
+          <h2 className="mb-5 text-sm font-semibold text-gray-900">
+            {editingId ? 'Editar producto' : 'Nuevo producto'}
+          </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
             <div className="sm:col-span-2">
@@ -322,7 +402,7 @@ export default function AdminProductosPage() {
               </select>
             </div>
 
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2 lg:col-span-3">
               <label className={labelClass}>Talles disponibles</label>
               <div className="flex flex-wrap gap-2">
                 {SIZES.map((s) => (
@@ -332,6 +412,26 @@ export default function AdminProductosPage() {
                 ))}
               </div>
               {form.sizes.length === 0 && <p className="mt-1.5 text-[11px] text-gray-400">Seleccioná al menos un talle</p>}
+
+              {form.sizes.length > 0 && (
+                <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Stock por talle</p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                    {form.sizes.map((s) => (
+                      <div key={s} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                        <span className="text-xs font-semibold text-gray-700 w-8">{s}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={form.stock[s] ?? 0}
+                          onChange={(e) => setSizeStock(s, parseInt(e.target.value) || 0)}
+                          className="w-full bg-transparent text-sm text-gray-900 outline-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="sm:col-span-2 lg:col-span-3">
@@ -375,12 +475,25 @@ export default function AdminProductosPage() {
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end">
-            <button type="submit" disabled={submitting || !form.name || !form.price || !form.category || form.sizes.length === 0 || (!form.image1 && !form.image1File)}
-              className="rounded-lg bg-[#0f0f0f] px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-gray-800 disabled:opacity-40"
-            >
-              {submitting ? 'Subiendo...' : 'Agregar producto'}
-            </button>
+          <div className="mt-6 flex items-center justify-between">
+            {editingId && (
+              <button
+                type="button"
+                onClick={() => { setEditingId(null); setForm(emptyForm); setActivePanel(null) }}
+                className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
+              >
+                Cancelar edición
+              </button>
+            )}
+            <div className="ml-auto">
+              <button
+                type="submit"
+                disabled={submitting || !form.name || !form.price || !form.category || form.sizes.length === 0 || (!editingId && !form.image1 && !form.image1File)}
+                className="rounded-lg bg-[#0f0f0f] px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-gray-800 disabled:opacity-40"
+              >
+                {submitting ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Agregar producto'}
+              </button>
+            </div>
           </div>
         </form>
       )}
@@ -418,6 +531,9 @@ export default function AdminProductosPage() {
                       <MoreHorizontal className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem className="gap-2 text-sm cursor-pointer" onClick={() => startEdit(product)}>
+                        <Pencil className="h-3.5 w-3.5" /> Editar
+                      </DropdownMenuItem>
                       <DropdownMenuItem className="gap-2 text-sm text-red-600 cursor-pointer focus:text-red-600" onClick={() => handleDeleteProduct(product.id)}>
                         <Trash2 className="h-3.5 w-3.5" /> Eliminar
                       </DropdownMenuItem>
@@ -430,7 +546,14 @@ export default function AdminProductosPage() {
                   <span className="font-semibold text-gray-900">${product.price.toLocaleString('es-AR')}</span>
                 </div>
                 <div className="flex flex-wrap gap-1">
-                  {product.sizes.map((s) => <span key={s} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">{s}</span>)}
+                  {product.sizes.map((s) => {
+                    const qty = product.stock?.[s]
+                    return (
+                      <span key={s} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">
+                        {s}{typeof qty === 'number' ? ` · ${qty}` : ''}
+                      </span>
+                    )
+                  })}
                 </div>
                 <div className="flex gap-1.5 flex-wrap">
                   {product.isNew && <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">New Drop</span>}
@@ -468,7 +591,14 @@ export default function AdminProductosPage() {
                   <td className="px-5 py-3.5 text-sm font-semibold text-gray-900">${product.price.toLocaleString('es-AR')}</td>
                   <td className="px-5 py-3.5">
                     <div className="flex flex-wrap gap-1">
-                      {product.sizes.map((s) => <span key={s} className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-600">{s}</span>)}
+                      {product.sizes.map((s) => {
+                        const qty = product.stock?.[s]
+                        return (
+                          <span key={s} className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-600">
+                            {s}{typeof qty === 'number' ? ` · ${qty}` : ''}
+                          </span>
+                        )
+                      })}
                     </div>
                   </td>
                   <td className="px-5 py-3.5">
@@ -485,7 +615,9 @@ export default function AdminProductosPage() {
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="gap-2 text-sm cursor-pointer"><Pencil className="h-3.5 w-3.5" /> Editar</DropdownMenuItem>
+                        <DropdownMenuItem className="gap-2 text-sm cursor-pointer" onClick={() => startEdit(product)}>
+                          <Pencil className="h-3.5 w-3.5" /> Editar
+                        </DropdownMenuItem>
                         <DropdownMenuItem className="gap-2 text-sm text-red-600 cursor-pointer focus:text-red-600" onClick={() => handleDeleteProduct(product.id)}>
                           <Trash2 className="h-3.5 w-3.5" /> Eliminar
                         </DropdownMenuItem>

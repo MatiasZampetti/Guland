@@ -10,6 +10,7 @@ export interface Product {
   category: Category
   images: string[]
   sizes: Size[]
+  stock?: Record<string, number>
   description: string
   featured?: boolean
   isNew?: boolean

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { DollarSign, ShoppingCart, TrendingUp, Users, ArrowUpRight } from 'lucide-react'
+import { DollarSign, ShoppingCart, TrendingUp, ArrowUpRight } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const statusLabel: Record<string, string> = {
@@ -23,10 +23,9 @@ const MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Se
 export default async function AdminPage() {
   const admin = createAdminClient()
 
-  const [{ data: orders }, { data: sales }, { data: profiles }] = await Promise.all([
+  const [{ data: orders }, { data: sales }] = await Promise.all([
     admin.from('orders').select('id, customer_name, customer_email, total, status, created_at').order('created_at', { ascending: false }),
     admin.from('sales').select('product_name, quantity, total, created_at'),
-    admin.from('profiles').select('id'),
   ])
 
   const now = new Date()
@@ -52,7 +51,6 @@ export default async function AdminPage() {
   const pedidosMes = ordersThisMonth.length
   const pedidosAnterior = ordersLastMonth.length
   const totalAcumulado = (orders ?? []).reduce((s, o) => s + o.total, 0)
-  const totalUsuarios = profiles?.length ?? 0
 
   const pct = (curr: number, prev: number) => {
     if (prev === 0) return null
@@ -111,14 +109,6 @@ export default async function AdminPage() {
       iconBg: 'bg-green-50',
       iconColor: 'text-green-600',
     },
-    {
-      label: 'Clientes',
-      value: totalUsuarios,
-      change: null,
-      icon: Users,
-      iconBg: 'bg-purple-50',
-      iconColor: 'text-purple-600',
-    },
   ]
 
   return (
@@ -136,7 +126,7 @@ export default async function AdminPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {stats.map(({ label, value, change, icon: Icon, iconBg, iconColor }) => (
           <div key={label} className="rounded-xl bg-white p-4 sm:p-5 shadow-sm">
             <div className="sm:hidden">

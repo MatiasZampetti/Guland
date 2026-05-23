@@ -6,9 +6,9 @@ interface ProductCardProps {
   dark?: boolean
 }
 
-export function ProductCard({ product, dark = false }: ProductCardProps) {
-  const textColor = dark ? 'text-white' : 'text-black'
-  const mutedColor = dark ? 'text-white/40' : 'text-black/40'
+export function ProductCard({ product }: ProductCardProps) {
+  const cashPrice = Math.round(product.price * 0.85)
+  const installment = Math.round(product.price / 3)
 
   return (
     <Link href={`/product/${product.slug}`} className="group block">
@@ -36,12 +36,28 @@ export function ProductCard({ product, dark = false }: ProductCardProps) {
 
       {/* Info */}
       <div className="mt-2 sm:mt-3">
-        <p className={`text-[10px] sm:text-[11px] font-bold tracking-widest ${mutedColor}`}>
+        {/* Categoría en rojo */}
+        <p className="text-[10px] sm:text-[11px] font-bold tracking-widest text-red-500">
           {product.category.toUpperCase()}
         </p>
-        <p className={`mt-0.5 text-xs sm:text-sm font-medium line-clamp-1 ${textColor}`}>{product.name}</p>
-        <p className={`mt-0.5 text-xs sm:text-sm font-semibold ${textColor}`}>
+
+        {/* Nombre en blanco */}
+        <p className="mt-0.5 text-xs sm:text-sm font-medium line-clamp-1 text-white">
+          {product.name}
+        </p>
+
+        {/* Precio tarjeta + cuotas */}
+        <p className="mt-0.5 text-xs sm:text-sm font-semibold text-white">
           ${product.price.toLocaleString('es-AR')}
+          <span className="ml-1.5 text-[10px] font-normal text-white/50">
+            3x ${installment.toLocaleString('es-AR')} cuotas s/i
+          </span>
+        </p>
+
+        {/* Precio efectivo/transferencia */}
+        <p className="mt-0.5 text-[10px] sm:text-[11px] text-green-400">
+          Efec./transf. ${cashPrice.toLocaleString('es-AR')}
+          <span className="ml-1 text-white/40">−15%</span>
         </p>
       </div>
     </Link>

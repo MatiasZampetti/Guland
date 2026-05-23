@@ -9,6 +9,7 @@ export interface DBProduct {
   description: string
   images: string[]
   sizes: string[]
+  stock?: Record<string, number> | null
   featured: boolean
   is_new: boolean
   is_on_sale: boolean
@@ -25,6 +26,7 @@ export function dbToProduct(p: DBProduct): Product {
     description: p.description,
     images: p.images,
     sizes: p.sizes as Size[],
+    stock: p.stock ?? {},
     featured: p.featured,
     isNew: p.is_new,
     isOnSale: p.is_on_sale,

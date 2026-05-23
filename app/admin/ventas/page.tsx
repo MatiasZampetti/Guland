@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { CheckCircle, Plus, X } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { CheckCircle, Plus, X, Search, Trash2 } from 'lucide-react'
 
-type MetodoPago = 'efectivo' | 'transferencia' | 'mercadopago' | 'tarjeta'
+type MetodoPago = 'efectivo' | 'transferencia' | 'tarjeta'
 
 interface DBSale {
   id: string
@@ -25,38 +25,48 @@ interface DBProduct {
   sizes: string[]
 }
 
+interface CartItem {
+  productoId: string
+  productoNombre: string
+  talle: string
+  cantidad: number
+  precioUnitario: number
+}
+
 const metodoLabels: Record<MetodoPago, string> = {
   efectivo: 'Efectivo',
   transferencia: 'Transferencia',
-  mercadopago: 'MercadoPago',
   tarjeta: 'Tarjeta',
 }
 
 const metodoBadge: Record<MetodoPago, string> = {
   efectivo: 'bg-green-100 text-green-700',
   transferencia: 'bg-blue-100 text-blue-700',
-  mercadopago: 'bg-sky-100 text-sky-700',
   tarjeta: 'bg-purple-100 text-purple-700',
 }
 
-const emptyForm = {
-  cliente: '',
+const emptyDraft = {
   productoId: '',
   productoNombre: '',
   talle: '',
   cantidad: 1,
   precioUnitario: 0,
-  metodoPago: 'mercadopago' as MetodoPago,
 }
 
 export default function AdminVentasPage() {
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState(emptyForm)
+  const [cliente, setCliente] = useState('')
+  const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo')
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [draft, setDraft] = useState(emptyDraft)
+  const [productSearch, setProductSearch] = useState('')
+  const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [ventas, setVentas] = useState<DBSale[]>([])
   const [products, setProducts] = useState<DBProduct[]>([])
-  const [lastVenta, setLastVenta] = useState<DBSale | null>(null)
+  const [lastVentaSummary, setLastVentaSummary] = useState<{ items: number; total: number; metodo: MetodoPago } | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     Promise.all([
@@ -71,44 +81,88 @@ export default function AdminVentasPage() {
     })
   }, [])
 
-  const selectedProduct = products.find((p) => p.id === form.productoId)
-  const total = form.precioUnitario * form.cantidad
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowProductDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
 
-  function handleProductChange(id: string) {
-    const p = products.find((pr) => pr.id === id)
-    setForm((f) => ({
-      ...f,
-      productoId: id,
-      productoNombre: p?.name ?? '',
+  const selectedProduct = products.find((p) => p.id === draft.productoId)
+
+  const filteredProducts = productSearch.trim() === ''
+    ? products.slice(0, 8)
+    : products.filter((p) => p.name.toLowerCase().includes(productSearch.toLowerCase())).slice(0, 8)
+
+  const cartTotal = cart.reduce((s, it) => s + it.precioUnitario * it.cantidad, 0)
+  const draftTotal = draft.precioUnitario * draft.cantidad
+
+  function selectProduct(p: DBProduct) {
+    setDraft({
+      productoId: p.id,
+      productoNombre: p.name,
       talle: '',
-      precioUnitario: p?.price ?? 0,
-    }))
+      cantidad: 1,
+      precioUnitario: p.price,
+    })
+    setProductSearch(p.name)
+    setShowProductDropdown(false)
+  }
+
+  function clearDraft() {
+    setDraft(emptyDraft)
+    setProductSearch('')
+  }
+
+  function addToCart() {
+    if (!draft.productoId || !draft.talle || draft.cantidad < 1) return
+    setCart((prev) => [...prev, { ...draft }])
+    clearDraft()
+  }
+
+  function removeCartItem(index: number) {
+    setCart((prev) => prev.filter((_, i) => i !== index))
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.cliente || !form.productoId || !form.talle || form.cantidad < 1) return
-    setSubmitting(true)
+    if (!cliente) return
 
+    // Auto-agregar draft pendiente si está completo
+    const itemsToSend: CartItem[] = [...cart]
+    if (draft.productoId && draft.talle && draft.cantidad >= 1) {
+      itemsToSend.push({ ...draft })
+    }
+    if (itemsToSend.length === 0) return
+
+    setSubmitting(true)
     const res = await fetch('/api/sales', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        product_id: form.productoId,
-        product_name: form.productoNombre,
-        customer_name: form.cliente,
-        size: form.talle,
-        quantity: form.cantidad,
-        unit_price: form.precioUnitario,
-        payment_method: form.metodoPago,
+        customer_name: cliente,
+        payment_method: metodoPago,
+        items: itemsToSend.map((it) => ({
+          product_id: it.productoId,
+          product_name: it.productoNombre,
+          size: it.talle,
+          quantity: it.cantidad,
+          unit_price: it.precioUnitario,
+        })),
       }),
     })
 
     if (res.ok) {
-      const nueva = await res.json()
-      setVentas((prev) => [nueva, ...prev])
-      setLastVenta(nueva)
-      setForm(emptyForm)
+      const nuevas = await res.json() as DBSale[]
+      setVentas((prev) => [...nuevas.slice().reverse(), ...prev])
+      const total = nuevas.reduce((s, v) => s + v.total, 0)
+      setLastVentaSummary({ items: nuevas.length, total, metodo: metodoPago })
+      setCart([])
+      clearDraft()
+      setCliente('')
       setShowForm(false)
     }
     setSubmitting(false)
@@ -127,7 +181,15 @@ export default function AdminVentasPage() {
           <p className="mt-0.5 text-sm text-gray-400">Cada venta queda registrada en el historial</p>
         </div>
         <button
-          onClick={() => { setShowForm((v) => !v); setLastVenta(null) }}
+          onClick={() => {
+            setShowForm((v) => !v)
+            setLastVentaSummary(null)
+            if (showForm) {
+              setCart([])
+              clearDraft()
+              setCliente('')
+            }
+          }}
           className="flex items-center gap-2 rounded-lg bg-[#0f0f0f] px-4 py-2.5 text-xs font-semibold tracking-wider text-white hover:bg-gray-800 transition-colors min-h-[44px]"
         >
           {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
@@ -136,14 +198,14 @@ export default function AdminVentasPage() {
       </div>
 
       {/* Success banner */}
-      {lastVenta && (
+      {lastVentaSummary && (
         <div className="mb-5 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3.5">
           <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
           <div>
             <p className="text-sm font-semibold text-green-800">Venta registrada con éxito</p>
             <p className="text-xs text-green-600 mt-0.5">
-              {lastVenta.product_name} talle {lastVenta.size} × {lastVenta.quantity} ·{' '}
-              <strong>${lastVenta.total.toLocaleString('es-AR')}</strong> · {metodoLabels[lastVenta.payment_method]}
+              {lastVentaSummary.items} {lastVentaSummary.items === 1 ? 'ítem' : 'ítems'} ·{' '}
+              <strong>${lastVentaSummary.total.toLocaleString('es-AR')}</strong> · {metodoLabels[lastVentaSummary.metodo]}
             </p>
           </div>
         </div>
@@ -154,13 +216,12 @@ export default function AdminVentasPage() {
         <form onSubmit={handleSubmit} className="mb-8 rounded-xl bg-white p-5 sm:p-6 shadow-sm">
           <h2 className="mb-5 text-sm font-semibold text-gray-900">Nueva venta</h2>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
               <label className={labelClass}>Cliente</label>
               <input
-                value={form.cliente}
-                onChange={(e) => setForm({ ...form, cliente: e.target.value })}
+                value={cliente}
+                onChange={(e) => setCliente(e.target.value)}
                 placeholder="Nombre del cliente"
                 className={inputClass}
                 required
@@ -174,9 +235,9 @@ export default function AdminVentasPage() {
                   <button
                     key={m}
                     type="button"
-                    onClick={() => setForm({ ...form, metodoPago: m })}
+                    onClick={() => setMetodoPago(m)}
                     className={`rounded-lg border px-3.5 py-2 text-xs font-medium transition-colors ${
-                      form.metodoPago === m
+                      metodoPago === m
                         ? 'border-black bg-black text-white'
                         : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'
                     }`}
@@ -186,84 +247,161 @@ export default function AdminVentasPage() {
                 ))}
               </div>
             </div>
+          </div>
 
-            <div className="sm:col-span-2 lg:col-span-1">
-              <label className={labelClass}>Producto</label>
-              <select
-                value={form.productoId}
-                onChange={(e) => handleProductChange(e.target.value)}
-                className={inputClass}
-                required
-                disabled={loading}
-              >
-                <option value="">{loading ? 'Cargando...' : 'Seleccionar producto...'}</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} — ${p.price.toLocaleString('es-AR')}
-                  </option>
+          {/* Carrito */}
+          {cart.length > 0 && (
+            <div className="mt-6">
+              <label className={labelClass}>Productos agregados ({cart.length})</label>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 divide-y divide-gray-200">
+                {cart.map((it, idx) => (
+                  <div key={idx} className="flex items-center gap-3 px-4 py-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{it.productoNombre}</p>
+                      <p className="text-xs text-gray-500">Talle {it.talle} · ×{it.cantidad} · ${it.precioUnitario.toLocaleString('es-AR')} c/u</p>
+                    </div>
+                    <p className="text-sm font-semibold text-gray-900 shrink-0">
+                      ${(it.precioUnitario * it.cantidad).toLocaleString('es-AR')}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => removeCartItem(idx)}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 ))}
-              </select>
+              </div>
             </div>
+          )}
 
-            <div>
-              <label className={labelClass}>Talle</label>
-              <select
-                value={form.talle}
-                onChange={(e) => setForm({ ...form, talle: e.target.value })}
-                className={inputClass}
-                required
-                disabled={!selectedProduct}
-              >
-                <option value="">Seleccionar...</option>
-                {selectedProduct?.sizes.map((s: string) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
+          {/* Draft product */}
+          <div className="mt-6 rounded-lg border border-dashed border-gray-300 p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              {cart.length === 0 ? 'Producto' : 'Agregar otro producto'}
+            </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
-            <div>
-              <label className={labelClass}>Cantidad</label>
-              <input
-                type="number"
-                min={1}
-                max={99}
-                value={form.cantidad}
-                onChange={(e) => setForm({ ...form, cantidad: Math.max(1, parseInt(e.target.value) || 1) })}
-                className={inputClass}
-                required
-              />
-            </div>
+              <div className="sm:col-span-2 lg:col-span-3" ref={searchRef}>
+                <label className={labelClass}>Buscar producto</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+                  <input
+                    value={productSearch}
+                    onChange={(e) => {
+                      setProductSearch(e.target.value)
+                      setShowProductDropdown(true)
+                      if (e.target.value === '') {
+                        setDraft(emptyDraft)
+                      }
+                    }}
+                    onFocus={() => setShowProductDropdown(true)}
+                    placeholder={loading ? 'Cargando...' : 'Escribí para buscar...'}
+                    disabled={loading}
+                    className="w-full rounded-lg border border-gray-200 bg-white pl-9 pr-4 py-2.5 text-sm text-gray-900 outline-none focus:border-gray-400 transition-colors"
+                    autoComplete="off"
+                  />
+                  {showProductDropdown && filteredProducts.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                      {filteredProducts.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => selectProduct(p)}
+                          className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors"
+                        >
+                          <span className="text-gray-900 truncate">{p.name}</span>
+                          <span className="shrink-0 text-xs font-semibold text-gray-500">${p.price.toLocaleString('es-AR')}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {showProductDropdown && productSearch && filteredProducts.length === 0 && (
+                    <div className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-xs text-gray-400 shadow-lg">
+                      Sin coincidencias
+                    </div>
+                  )}
+                </div>
+              </div>
 
-            <div>
-              <label className={labelClass}>Precio unitario ($)</label>
-              <input
-                type="number"
-                min={0}
-                value={form.precioUnitario}
-                onChange={(e) => setForm({ ...form, precioUnitario: parseInt(e.target.value) || 0 })}
-                className={inputClass}
-                required
-              />
-            </div>
+              <div>
+                <label className={labelClass}>Talle</label>
+                <select
+                  value={draft.talle}
+                  onChange={(e) => setDraft({ ...draft, talle: e.target.value })}
+                  className={inputClass}
+                  disabled={!selectedProduct}
+                >
+                  <option value="">Seleccionar...</option>
+                  {selectedProduct?.sizes.map((s: string) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="sm:col-span-2">
-              <label className={labelClass}>Total</label>
-              <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5">
-                <span className="text-lg font-bold text-gray-900">${total.toLocaleString('es-AR')}</span>
-                {form.cantidad > 1 && (
-                  <span className="ml-2 text-xs text-gray-400">
-                    ({form.cantidad} × ${form.precioUnitario.toLocaleString('es-AR')})
-                  </span>
-                )}
+              <div>
+                <label className={labelClass}>Cantidad</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={draft.cantidad}
+                  onChange={(e) => setDraft({ ...draft, cantidad: Math.max(1, parseInt(e.target.value) || 1) })}
+                  className={inputClass}
+                  disabled={!selectedProduct}
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Precio unitario ($)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={draft.precioUnitario}
+                  onChange={(e) => setDraft({ ...draft, precioUnitario: parseInt(e.target.value) || 0 })}
+                  className={inputClass}
+                  disabled={!selectedProduct}
+                />
               </div>
             </div>
 
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <div className="text-xs text-gray-500">
+                {draft.productoId && draft.talle && (
+                  <>Subtotal: <span className="font-semibold text-gray-900">${draftTotal.toLocaleString('es-AR')}</span></>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={addToCart}
+                disabled={!draft.productoId || !draft.talle || draft.cantidad < 1}
+                className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:border-black hover:bg-black hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Agregar a venta
+              </button>
+            </div>
+          </div>
+
+          {/* Total */}
+          <div className="mt-6 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3.5">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total venta</p>
+              <p className="mt-0.5 text-xs text-gray-400">
+                {cart.length} {cart.length === 1 ? 'ítem agregado' : 'ítems agregados'}
+                {draft.productoId && draft.talle && ' + 1 sin agregar'}
+              </p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              ${(cartTotal + (draft.productoId && draft.talle ? draftTotal : 0)).toLocaleString('es-AR')}
+            </p>
           </div>
 
           <div className="mt-6 flex justify-end">
             <button
               type="submit"
-              disabled={!form.cliente || !form.productoId || !form.talle || submitting}
+              disabled={!cliente || (cart.length === 0 && (!draft.productoId || !draft.talle)) || submitting}
               className="rounded-lg bg-[#0f0f0f] px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-gray-800 disabled:opacity-40"
             >
               {submitting ? 'Registrando...' : 'Registrar venta'}
@@ -291,8 +429,8 @@ export default function AdminVentasPage() {
                 <div key={v.id} className="px-5 py-3.5 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-[11px] font-mono text-gray-400">{v.id.slice(0, 8)}</p>
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${metodoBadge[v.payment_method]}`}>
-                      {metodoLabels[v.payment_method]}
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${metodoBadge[v.payment_method] ?? 'bg-gray-100 text-gray-700'}`}>
+                      {metodoLabels[v.payment_method] ?? v.payment_method}
                     </span>
                   </div>
                   <p className="text-sm font-medium text-gray-900">{v.customer_name}</p>
@@ -331,8 +469,8 @@ export default function AdminVentasPage() {
                       <td className="px-5 py-3.5 text-sm text-gray-600">{v.quantity}</td>
                       <td className="px-5 py-3.5 text-sm font-bold text-gray-900">${v.total.toLocaleString('es-AR')}</td>
                       <td className="px-5 py-3.5">
-                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${metodoBadge[v.payment_method]}`}>
-                          {metodoLabels[v.payment_method]}
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${metodoBadge[v.payment_method] ?? 'bg-gray-100 text-gray-700'}`}>
+                          {metodoLabels[v.payment_method] ?? v.payment_method}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-xs text-gray-400">

@@ -58,15 +58,32 @@ export default function ProductPage({ params }: Props) {
 
         <div className="flex flex-col gap-5 sm:gap-6">
           <div>
-            <p className="mb-1 text-xs font-bold tracking-widest text-white/40">
+            <p className="mb-1 text-xs font-bold tracking-widest text-red-500">
               {product.category.toUpperCase()}
             </p>
             <h1 className="font-light" style={{ fontFamily: 'var(--font-bebas)', fontSize: 'clamp(1.8rem, 5vw, 2.5rem)' }}>
               {product.name}
             </h1>
-            <p className="mt-3 text-xl sm:text-2xl font-semibold">
-              ${product.price.toLocaleString('es-AR')}
-            </p>
+
+            {/* Precio tarjeta */}
+            <div className="mt-3">
+              <p className="text-xl sm:text-2xl font-semibold text-white">
+                ${product.price.toLocaleString('es-AR')}
+              </p>
+              <p className="mt-0.5 text-xs text-white/50">
+                Tarjeta — 3x ${Math.round(product.price / 3).toLocaleString('es-AR')} cuotas s/i
+              </p>
+            </div>
+
+            {/* Precio efectivo/transferencia */}
+            <div className="mt-3 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2.5">
+              <p className="text-base sm:text-lg font-semibold text-green-400">
+                ${Math.round(product.price * 0.85).toLocaleString('es-AR')}
+              </p>
+              <p className="text-xs text-green-400/70">
+                Efectivo o transferencia — 15% de descuento
+              </p>
+            </div>
           </div>
 
           <Separator />
