@@ -4,9 +4,11 @@ import { Product } from '@/types'
 interface ProductCardProps {
   product: Product
   dark?: boolean
+  /** En modo catálogo (home) se ocultan los precios */
+  catalog?: boolean
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, catalog = false }: ProductCardProps) {
   const cashPrice = Math.round(product.price * 0.85)
   const installment = Math.round(product.price / 3)
 
@@ -46,19 +48,21 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.name}
         </p>
 
-        {/* Precio tarjeta + cuotas */}
-        <p className="mt-0.5 text-xs sm:text-sm font-semibold text-white">
-          ${product.price.toLocaleString('es-AR')}
-          <span className="ml-1.5 text-[10px] font-normal text-white/50">
-            3x ${installment.toLocaleString('es-AR')} cuotas s/i
-          </span>
-        </p>
-
-        {/* Precio efectivo/transferencia */}
-        <p className="mt-0.5 text-[10px] sm:text-[11px] text-green-400">
-          Efec./transf. ${cashPrice.toLocaleString('es-AR')}
-          <span className="ml-1 text-white/40">−15%</span>
-        </p>
+        {/* Precios — solo en /shop, no en home */}
+        {!catalog && (
+          <>
+            <p className="mt-0.5 text-xs sm:text-sm font-semibold text-white">
+              ${product.price.toLocaleString('es-AR')}
+              <span className="ml-1.5 text-[10px] font-normal text-white/50">
+                3x ${installment.toLocaleString('es-AR')} cuotas s/i
+              </span>
+            </p>
+            <p className="mt-0.5 text-[10px] sm:text-[11px] text-green-400">
+              Efec./transf. ${cashPrice.toLocaleString('es-AR')}
+              <span className="ml-1 text-white/40">−15%</span>
+            </p>
+          </>
+        )}
       </div>
     </Link>
   )

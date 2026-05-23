@@ -35,7 +35,7 @@ export async function NewDrop() {
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} dark />
+            <ProductCard key={product.id} product={product} catalog />
           ))}
         </div>
       </div>
