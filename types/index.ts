@@ -21,6 +21,7 @@ export interface Product {
   featured?: boolean
   isNew?: boolean
   isOnSale?: boolean
+  inHome?: boolean
 }
 
 export interface CartItem {

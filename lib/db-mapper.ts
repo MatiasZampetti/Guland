@@ -13,6 +13,7 @@ export interface DBProduct {
   featured: boolean
   is_new: boolean
   is_on_sale: boolean
+  in_home: boolean
   created_at: string
 }
 
@@ -30,5 +31,6 @@ export function dbToProduct(p: DBProduct): Product {
     featured: p.featured,
     isNew: p.is_new,
     isOnSale: p.is_on_sale,
+    inHome: p.in_home,
   }
 }

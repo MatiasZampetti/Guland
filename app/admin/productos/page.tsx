@@ -12,8 +12,31 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const SIZES: Size[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
-type Visibilidad = 'tienda' | 'new' | 'sale'
+type Visibilidad = 'tienda' | 'new' | 'sale' | 'destacados'
 type ActivePanel = 'producto' | 'categorias' | null
+type StatusFilter = 'todos' | 'new' | 'sale' | 'destacados' | 'tienda' | 'home'
+
+const HOME_LIMIT = 4
+
+const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
+  { value: 'todos', label: 'Todos' },
+  { value: 'new', label: 'New Drop' },
+  { value: 'sale', label: 'Sale' },
+  { value: 'destacados', label: 'Destacados' },
+  { value: 'tienda', label: 'Solo tienda' },
+  { value: 'home', label: 'En home' },
+]
+
+function matchesStatus(p: Product, status: StatusFilter): boolean {
+  switch (status) {
+    case 'new': return !!p.isNew
+    case 'sale': return !!p.isOnSale
+    case 'destacados': return !!p.featured
+    case 'tienda': return !p.isNew && !p.isOnSale && !p.featured
+    case 'home': return !!p.inHome
+    default: return true
+  }
+}
 
 const emptyForm = {
   name: '',
@@ -29,7 +52,7 @@ const emptyForm = {
   image2File: null as File | null,
   image2Preview: '',
   visibilidad: 'tienda' as Visibilidad,
-  featured: false,
+  inHome: false,
 }
 
 const emptyCatForm = { label: '', imageFile: null as File | null, imagePreview: '' }
@@ -90,8 +113,10 @@ export default function AdminProductosPage() {
   const [form, setForm] = useState(emptyForm)
   const [catForm, setCatForm] = useState(emptyCatForm)
   const [lastAdded, setLastAdded] = useState<{ name: string; action: 'added' | 'updated' } | null>(null)
+  const [homeLimitWarning, setHomeLimitWarning] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('todos')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos')
   const [submitting, setSubmitting] = useState(false)
 
   const allFilterCats = ['todos', ...categories.map((c) => c.slug)]
@@ -104,7 +129,8 @@ export default function AdminProductosPage() {
   const filtered = products.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.category.includes(search.toLowerCase())
     const matchCat = catFilter === 'todos' || p.category === catFilter
-    return matchSearch && matchCat
+    const matchStatus = matchesStatus(p, statusFilter)
+    return matchSearch && matchCat && matchStatus
   })
 
   function togglePanel(panel: ActivePanel) {
@@ -117,7 +143,7 @@ export default function AdminProductosPage() {
   }
 
   function startEdit(product: Product) {
-    const visibilidad: Visibilidad = product.isNew ? 'new' : product.isOnSale ? 'sale' : 'tienda'
+    const visibilidad: Visibilidad = product.isNew ? 'new' : product.isOnSale ? 'sale' : product.featured ? 'destacados' : 'tienda'
     setForm({
       name: product.name,
       price: String(product.price),
@@ -132,7 +158,7 @@ export default function AdminProductosPage() {
       image2File: null,
       image2Preview: '',
       visibilidad,
-      featured: product.featured ?? false,
+      inHome: product.inHome ?? false,
     })
     setEditingId(product.id)
     setActivePanel('producto')
@@ -156,6 +182,36 @@ export default function AdminProductosPage() {
 
   function setSizeStock(size: Size, value: number) {
     setForm((f) => ({ ...f, stock: { ...f.stock, [size]: Math.max(0, value) } }))
+  }
+
+  function setVisibilidad(value: Visibilidad) {
+    // El flag "en home" solo aplica a New Drop y Destacados
+    const keepsHome = value === 'new' || value === 'destacados'
+    setForm((f) => ({ ...f, visibilidad: value, inHome: keepsHome ? f.inHome : false }))
+  }
+
+  // Cuántos productos ya están "en home" en la sección de la categoría actual (excluye el que se edita)
+  function homeCount(cat: Visibilidad) {
+    return products.filter((p) =>
+      p.id !== editingId && p.inHome && (cat === 'new' ? p.isNew : cat === 'destacados' ? p.featured : false)
+    ).length
+  }
+
+  function toggleHome() {
+    const cat = form.visibilidad
+    if (cat !== 'new' && cat !== 'destacados') return
+    // Apagar siempre se permite
+    if (form.inHome) {
+      setForm((f) => ({ ...f, inHome: false }))
+      return
+    }
+    // Encender: validar tope de 4
+    if (homeCount(cat) >= HOME_LIMIT) {
+      const seccion = cat === 'new' ? 'New Drop' : 'Destacados'
+      setHomeLimitWarning(`Ya hay ${HOME_LIMIT} productos ${seccion} en el home. Sacá uno antes de agregar otro.`)
+      return
+    }
+    setForm((f) => ({ ...f, inHome: true }))
   }
 
   async function uploadImage(file: File, bucket: string): Promise<string> {
@@ -191,9 +247,10 @@ export default function AdminProductosPage() {
       images,
       sizes: form.sizes,
       stock: stockClean,
-      featured: form.featured,
+      featured: form.visibilidad === 'destacados',
       is_new: form.visibilidad === 'new',
       is_on_sale: form.visibilidad === 'sale',
+      in_home: form.inHome,
     }
 
     if (editingId) {
@@ -263,6 +320,25 @@ export default function AdminProductosPage() {
 
   return (
     <div className="p-4 sm:p-6 md:p-8">
+
+      {/* Popup: límite de productos en home */}
+      {homeLimitWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setHomeLimitWarning(null)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-gray-900">Límite alcanzado</h3>
+            <p className="mt-2 text-sm text-gray-600">{homeLimitWarning}</p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setHomeLimitWarning(null)}
+                className="rounded-lg bg-[#0f0f0f] px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -459,20 +535,27 @@ export default function AdminProductosPage() {
             <div className="sm:col-span-2">
               <label className={labelClass}>Aparece en</label>
               <div className="flex flex-wrap gap-2">
-                {([{ value: 'tienda', label: 'Solo tienda' }, { value: 'new', label: 'New Drop' }, { value: 'sale', label: 'Sale' }] as { value: Visibilidad; label: string }[]).map(({ value, label }) => (
-                  <button key={value} type="button" onClick={() => setForm({ ...form, visibilidad: value })}
+                {([{ value: 'tienda', label: 'Solo tienda' }, { value: 'new', label: 'New Drop' }, { value: 'sale', label: 'Sale' }, { value: 'destacados', label: 'Destacados' }] as { value: Visibilidad; label: string }[]).map(({ value, label }) => (
+                  <button key={value} type="button" onClick={() => setVisibilidad(value)}
                     className={`rounded-lg border px-3.5 py-2 text-xs font-medium transition-colors ${form.visibilidad === value ? 'border-black bg-black text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'}`}
                   >{label}</button>
                 ))}
               </div>
             </div>
 
-            <div>
-              <label className={labelClass}>Destacado en home</label>
-              <button type="button" onClick={() => setForm({ ...form, featured: !form.featured })}
-                className={`rounded-lg border px-3.5 py-2 text-xs font-medium transition-colors ${form.featured ? 'border-black bg-black text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'}`}
-              >{form.featured ? 'Sí, destacado' : 'No destacado'}</button>
-            </div>
+            {(() => {
+              const homeEnabled = form.visibilidad === 'new' || form.visibilidad === 'destacados'
+              const homeLabel = form.visibilidad === 'new' ? 'New Drop en home' : form.visibilidad === 'destacados' ? 'Destacado en home' : 'En home'
+              return (
+                <div>
+                  <label className={labelClass}>{homeLabel}</label>
+                  <button type="button" onClick={toggleHome} disabled={!homeEnabled}
+                    className={`rounded-lg border px-3.5 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${form.inHome && homeEnabled ? 'border-black bg-black text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'}`}
+                  >{!homeEnabled ? 'No disponible' : form.inHome ? 'Sí, en home' : 'No en home'}</button>
+                  {homeEnabled && <p className="mt-1.5 text-[11px] text-gray-400">{homeCount(form.visibilidad)}/{HOME_LIMIT} en el home</p>}
+                </div>
+              )
+            })()}
           </div>
 
           <div className="mt-6 flex items-center justify-between">
@@ -499,18 +582,28 @@ export default function AdminProductosPage() {
       )}
 
       {/* Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1 sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar producto..."
-            className="w-full rounded-lg border border-gray-200 bg-white pl-9 pr-4 py-2.5 text-sm text-gray-900 outline-none focus:border-gray-400 transition-colors"
-          />
+      <div className="mb-4 space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1 sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar producto..."
+              className="w-full rounded-lg border border-gray-200 bg-white pl-9 pr-4 py-2.5 text-sm text-gray-900 outline-none focus:border-gray-400 transition-colors"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {allFilterCats.map((c) => (
+              <button key={c} onClick={() => setCatFilter(c)}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${catFilter === c ? 'bg-[#0f0f0f] text-white' : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'}`}
+              >{c}</button>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {allFilterCats.map((c) => (
-            <button key={c} onClick={() => setCatFilter(c)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${catFilter === c ? 'bg-[#0f0f0f] text-white' : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'}`}
-            >{c}</button>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Estado</span>
+          {STATUS_FILTERS.map(({ value, label }) => (
+            <button key={value} onClick={() => setStatusFilter(value)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${statusFilter === value ? 'bg-[#0f0f0f] text-white' : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'}`}
+            >{label}</button>
           ))}
         </div>
       </div>
@@ -560,6 +653,7 @@ export default function AdminProductosPage() {
                   {product.isOnSale && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Sale</span>}
                   {product.featured && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">Destacado</span>}
                   {!product.isNew && !product.featured && !product.isOnSale && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">Tienda</span>}
+                  {product.inHome && <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">En home</span>}
                 </div>
               </div>
             </div>
@@ -607,6 +701,7 @@ export default function AdminProductosPage() {
                       {product.isOnSale && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Sale</span>}
                       {product.featured && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">Destacado</span>}
                       {!product.isNew && !product.featured && !product.isOnSale && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-500">Tienda</span>}
+                      {product.inHome && <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">En home</span>}
                     </div>
                   </td>
                   <td className="px-5 py-3.5 text-right">

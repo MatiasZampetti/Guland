@@ -10,6 +10,7 @@ export async function NewDrop() {
     .from('products')
     .select('*')
     .eq('is_new', true)
+    .eq('in_home', true)
     .order('created_at', { ascending: false })
     .limit(4)
 

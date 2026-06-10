@@ -10,6 +10,7 @@ export async function FeaturedProducts() {
     .from('products')
     .select('*')
     .eq('featured', true)
+    .eq('in_home', true)
     .order('created_at', { ascending: false })
     .limit(4)
 
