@@ -23,6 +23,7 @@ interface DBProduct {
   name: string
   price: number
   sizes: string[]
+  stock?: Record<string, number> | null
 }
 
 interface CartItem {
@@ -66,6 +67,7 @@ export default function AdminVentasPage() {
   const [lastVentaSummary, setLastVentaSummary] = useState<{ items: number; total: number; metodo: MetodoPago } | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [stockWarning, setStockWarning] = useState<string | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -75,7 +77,7 @@ export default function AdminVentasPage() {
     ]).then(([salesData, productsData]) => {
       setVentas(Array.isArray(salesData) ? salesData : [])
       setProducts((Array.isArray(productsData) ? productsData : []).map((p: DBProduct) => ({
-        id: p.id, name: p.name, price: p.price, sizes: p.sizes,
+        id: p.id, name: p.name, price: p.price, sizes: p.sizes, stock: p.stock ?? {},
       })))
       setLoading(false)
     })
@@ -100,6 +102,15 @@ export default function AdminVentasPage() {
   const cartTotal = cart.reduce((s, it) => s + it.precioUnitario * it.cantidad, 0)
   const draftTotal = draft.precioUnitario * draft.cantidad
 
+  // Stock total del talle elegido (undefined = el producto no trackea stock para ese talle)
+  const stockTalle = draft.talle ? selectedProduct?.stock?.[draft.talle] : undefined
+  // Unidades del mismo producto+talle ya cargadas en el carrito
+  const enCarrito = cart
+    .filter((it) => it.productoId === draft.productoId && it.talle === draft.talle)
+    .reduce((s, it) => s + it.cantidad, 0)
+  // Stock disponible para el draft actual (undefined = sin límite conocido)
+  const stockDisponible = stockTalle === undefined ? undefined : Math.max(0, stockTalle - enCarrito)
+
   function selectProduct(p: DBProduct) {
     setDraft({
       productoId: p.id,
@@ -119,6 +130,13 @@ export default function AdminVentasPage() {
 
   function addToCart() {
     if (!draft.productoId || !draft.talle || draft.cantidad < 1) return
+    if (stockDisponible !== undefined && draft.cantidad > stockDisponible) {
+      setStockWarning(
+        `No hay más stock de "${draft.productoNombre}" en talle ${draft.talle}. ` +
+        `Stock disponible: ${stockDisponible}${enCarrito > 0 ? ` (ya tenés ${enCarrito} en esta venta)` : ''}.`
+      )
+      return
+    }
     setCart((prev) => [...prev, { ...draft }])
     clearDraft()
   }
@@ -173,6 +191,25 @@ export default function AdminVentasPage() {
 
   return (
     <div className="p-4 sm:p-6 md:p-8">
+
+      {/* Popup: sin stock */}
+      {stockWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setStockWarning(null)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-gray-900">Sin stock suficiente</h3>
+            <p className="mt-2 text-sm text-gray-600">{stockWarning}</p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setStockWarning(null)}
+                className="rounded-lg bg-[#0f0f0f] px-4 py-2 text-xs font-semibold tracking-wider text-white hover:bg-gray-800 transition-colors"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -329,7 +366,16 @@ export default function AdminVentasPage() {
                 <label className={labelClass}>Talle</label>
                 <select
                   value={draft.talle}
-                  onChange={(e) => setDraft({ ...draft, talle: e.target.value })}
+                  onChange={(e) => {
+                    const talle = e.target.value
+                    // Al cambiar de talle, ajustar la cantidad si supera el stock de ese talle
+                    const stockNuevo = talle ? selectedProduct?.stock?.[talle] : undefined
+                    const yaEnCarrito = cart
+                      .filter((it) => it.productoId === draft.productoId && it.talle === talle)
+                      .reduce((s, it) => s + it.cantidad, 0)
+                    const disp = stockNuevo === undefined ? undefined : Math.max(0, stockNuevo - yaEnCarrito)
+                    setDraft({ ...draft, talle, cantidad: disp === undefined ? draft.cantidad : Math.min(draft.cantidad, Math.max(1, disp)) })
+                  }}
                   className={inputClass}
                   disabled={!selectedProduct}
                 >
@@ -345,12 +391,28 @@ export default function AdminVentasPage() {
                 <input
                   type="number"
                   min={1}
-                  max={99}
+                  max={stockDisponible ?? 99}
                   value={draft.cantidad}
-                  onChange={(e) => setDraft({ ...draft, cantidad: Math.max(1, parseInt(e.target.value) || 1) })}
+                  onChange={(e) => {
+                    const pedida = Math.max(1, parseInt(e.target.value) || 1)
+                    if (stockDisponible !== undefined && pedida > stockDisponible) {
+                      setStockWarning(
+                        `No hay más stock de "${draft.productoNombre}" en talle ${draft.talle}. ` +
+                        `Stock disponible: ${stockDisponible}${enCarrito > 0 ? ` (ya tenés ${enCarrito} en esta venta)` : ''}.`
+                      )
+                      setDraft({ ...draft, cantidad: Math.max(1, stockDisponible) })
+                      return
+                    }
+                    setDraft({ ...draft, cantidad: pedida })
+                  }}
                   className={inputClass}
                   disabled={!selectedProduct}
                 />
+                {draft.talle && stockDisponible !== undefined && (
+                  <p className={`mt-1.5 text-[11px] ${stockDisponible === 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                    {stockDisponible === 0 ? 'Sin stock disponible' : `${stockDisponible} disponible${stockDisponible === 1 ? '' : 's'} en talle ${draft.talle}`}
+                  </p>
+                )}
               </div>
 
               <div>

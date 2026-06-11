@@ -51,6 +51,7 @@ const emptyForm = {
   image2: '',
   image2File: null as File | null,
   image2Preview: '',
+  extraImages: [] as { file: File | null; url: string; preview: string }[],
   visibilidad: 'tienda' as Visibilidad,
   inHome: false,
 }
@@ -118,6 +119,23 @@ export default function AdminProductosPage() {
   const [catFilter, setCatFilter] = useState('todos')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos')
   const [submitting, setSubmitting] = useState(false)
+  const topRef = useRef<HTMLDivElement>(null)
+  const extraImagesRef = useRef<HTMLInputElement>(null)
+
+  function addExtraImages(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    if (files.length) {
+      setForm((f) => ({
+        ...f,
+        extraImages: [...f.extraImages, ...files.map((file) => ({ file, url: '', preview: URL.createObjectURL(file) }))],
+      }))
+    }
+    e.target.value = '' // permite volver a elegir el mismo archivo
+  }
+
+  function removeExtraImage(index: number) {
+    setForm((f) => ({ ...f, extraImages: f.extraImages.filter((_, i) => i !== index) }))
+  }
 
   const allFilterCats = ['todos', ...categories.map((c) => c.slug)]
 
@@ -157,13 +175,14 @@ export default function AdminProductosPage() {
       image2: product.images[1] ?? '',
       image2File: null,
       image2Preview: '',
+      extraImages: product.images.slice(2).map((url) => ({ file: null, url, preview: url })),
       visibilidad,
       inHome: product.inHome ?? false,
     })
     setEditingId(product.id)
     setActivePanel('producto')
     setLastAdded(null)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   function toggleSize(s: Size) {
@@ -234,6 +253,10 @@ export default function AdminProductosPage() {
     else if (form.image1) images.push(form.image1)
     if (form.image2File) images.push(await uploadImage(form.image2File, 'products'))
     else if (form.image2) images.push(form.image2)
+    for (const img of form.extraImages) {
+      if (img.file) images.push(await uploadImage(img.file, 'products'))
+      else if (img.url) images.push(img.url)
+    }
 
     const stockClean = Object.fromEntries(
       form.sizes.map((s) => [s, form.stock[s] ?? 0])
@@ -319,7 +342,7 @@ export default function AdminProductosPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-8">
+    <div ref={topRef} className="p-4 sm:p-6 md:p-8">
 
       {/* Popup: límite de productos en home */}
       {homeLimitWarning && (
@@ -530,6 +553,35 @@ export default function AdminProductosPage() {
                 preview={form.image2Preview || form.image2}
                 onFile={(f) => setForm({ ...form, image2File: f, image2: '', image2Preview: URL.createObjectURL(f) })}
               />
+            </div>
+
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className={labelClass}>Imágenes adicionales (carrousel)</label>
+              <div className="flex flex-wrap gap-3">
+                {form.extraImages.map((img, i) => (
+                  <div key={i} className="relative h-20 w-20">
+                    <img src={img.preview} alt="" className="h-20 w-20 rounded-lg border border-gray-200 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeExtraImage(i)}
+                      className="absolute -right-2 -top-2 rounded-full bg-black p-1 text-white shadow-sm transition-colors hover:bg-red-600"
+                      aria-label="Quitar imagen"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => extraImagesRef.current?.click()}
+                  className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-gray-400 transition-colors hover:border-gray-400 hover:bg-gray-100"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span className="text-[10px] font-medium">Agregar</span>
+                </button>
+                <input ref={extraImagesRef} type="file" accept="image/*" multiple className="hidden" onChange={addExtraImages} />
+              </div>
+              <p className="mt-1.5 text-[11px] text-gray-400">Se muestran en la página del producto como carrousel, en este orden.</p>
             </div>
 
             <div className="sm:col-span-2">
