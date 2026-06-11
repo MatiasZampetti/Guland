@@ -428,22 +428,11 @@ export default function AdminVentasPage() {
               </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <div className="text-xs text-gray-500">
-                {draft.productoId && draft.talle && (
-                  <>Subtotal: <span className="font-semibold text-gray-900">${draftTotal.toLocaleString('es-AR')}</span></>
-                )}
+            {draft.productoId && draft.talle && (
+              <div className="mt-4 text-xs text-gray-500">
+                Subtotal: <span className="font-semibold text-gray-900">${draftTotal.toLocaleString('es-AR')}</span>
               </div>
-              <button
-                type="button"
-                onClick={addToCart}
-                disabled={!draft.productoId || !draft.talle || draft.cantidad < 1}
-                className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:border-black hover:bg-black hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Agregar a venta
-              </button>
-            </div>
+            )}
           </div>
 
           {/* Total */}
@@ -460,7 +449,16 @@ export default function AdminVentasPage() {
             </p>
           </div>
 
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={addToCart}
+              disabled={!draft.productoId || !draft.talle || draft.cantidad < 1}
+              className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-black hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Plus className="h-4 w-4" />
+              Agregar producto
+            </button>
             <button
               type="submit"
               disabled={!cliente || (cart.length === 0 && (!draft.productoId || !draft.talle)) || submitting}

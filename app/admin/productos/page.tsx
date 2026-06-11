@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Trash2, MoreHorizontal, Search, CheckCircle, X, Tag, Upload, ImagePlus, Pencil } from 'lucide-react'
+import { Plus, Trash2, MoreHorizontal, Search, CheckCircle, X, Tag, Upload, ImagePlus, Pencil, AlertTriangle } from 'lucide-react'
 import { dbToProduct, type DBProduct } from '@/lib/db-mapper'
 import { type Product, Size } from '@/types'
 import {
@@ -36,6 +36,24 @@ function matchesStatus(p: Product, status: StatusFilter): boolean {
     case 'home': return !!p.inHome
     default: return true
   }
+}
+
+// ¿El producto trackea stock en al menos un talle? (números, no undefined)
+function tracksStock(p: Product): boolean {
+  return p.sizes.some((s) => typeof p.stock?.[s] === 'number')
+}
+
+// Suma del stock de todos los talles trackeados
+function totalStock(p: Product): number {
+  return p.sizes.reduce((sum, s) => {
+    const qty = p.stock?.[s]
+    return sum + (typeof qty === 'number' ? qty : 0)
+  }, 0)
+}
+
+// Producto agotado: trackea stock y no le queda ninguna unidad
+function isOutOfStock(p: Product): boolean {
+  return tracksStock(p) && totalStock(p) === 0
 }
 
 const emptyForm = {
@@ -114,6 +132,7 @@ export default function AdminProductosPage() {
   const [form, setForm] = useState(emptyForm)
   const [catForm, setCatForm] = useState(emptyCatForm)
   const [lastAdded, setLastAdded] = useState<{ name: string; action: 'added' | 'updated' } | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [homeLimitWarning, setHomeLimitWarning] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('todos')
@@ -144,12 +163,15 @@ export default function AdminProductosPage() {
     fetch('/api/categories').then(r => r.json()).then(setCategories)
   }, [])
 
-  const filtered = products.filter((p) => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.category.includes(search.toLowerCase())
-    const matchCat = catFilter === 'todos' || p.category === catFilter
-    const matchStatus = matchesStatus(p, statusFilter)
-    return matchSearch && matchCat && matchStatus
-  })
+  const filtered = products
+    .filter((p) => {
+      const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.category.includes(search.toLowerCase())
+      const matchCat = catFilter === 'todos' || p.category === catFilter
+      const matchStatus = matchesStatus(p, statusFilter)
+      return matchSearch && matchCat && matchStatus
+    })
+    // Los productos sin stock van al final (orden relativo estable)
+    .sort((a, b) => Number(isOutOfStock(a)) - Number(isOutOfStock(b)))
 
   function togglePanel(panel: ActivePanel) {
     setActivePanel((v) => (v === panel ? null : panel))
@@ -247,66 +269,71 @@ export default function AdminProductosPage() {
     if (!form.name || !form.price || !form.category || form.sizes.length === 0) return
     if (!editingId && !form.image1 && !form.image1File) return
     setSubmitting(true)
+    setSaveError(null)
 
-    const images: string[] = []
-    if (form.image1File) images.push(await uploadImage(form.image1File, 'products'))
-    else if (form.image1) images.push(form.image1)
-    if (form.image2File) images.push(await uploadImage(form.image2File, 'products'))
-    else if (form.image2) images.push(form.image2)
-    for (const img of form.extraImages) {
-      if (img.file) images.push(await uploadImage(img.file, 'products'))
-      else if (img.url) images.push(img.url)
-    }
+    try {
+      const images: string[] = []
+      if (form.image1File) images.push(await uploadImage(form.image1File, 'products'))
+      else if (form.image1) images.push(form.image1)
+      if (form.image2File) images.push(await uploadImage(form.image2File, 'products'))
+      else if (form.image2) images.push(form.image2)
+      for (const img of form.extraImages) {
+        if (img.file) images.push(await uploadImage(img.file, 'products'))
+        else if (img.url) images.push(img.url)
+      }
 
-    const stockClean = Object.fromEntries(
-      form.sizes.map((s) => [s, form.stock[s] ?? 0])
-    )
+      const stockClean = Object.fromEntries(
+        form.sizes.map((s) => [s, form.stock[s] ?? 0])
+      )
 
-    const payload = {
-      name: form.name,
-      price: parseInt(form.price),
-      category_slug: form.category,
-      description: form.description,
-      images,
-      sizes: form.sizes,
-      stock: stockClean,
-      featured: form.visibilidad === 'destacados',
-      is_new: form.visibilidad === 'new',
-      is_on_sale: form.visibilidad === 'sale',
-      in_home: form.inHome,
-    }
+      const payload = {
+        name: form.name,
+        price: parseInt(form.price),
+        category_slug: form.category,
+        description: form.description,
+        images,
+        sizes: form.sizes,
+        stock: stockClean,
+        featured: form.visibilidad === 'destacados',
+        is_new: form.visibilidad === 'new',
+        is_on_sale: form.visibilidad === 'sale',
+        in_home: form.inHome,
+      }
 
-    if (editingId) {
-      // Editar producto existente
-      const res = await fetch(`/api/products/${editingId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      if (res.ok) {
-        const updated = await res.json()
-        setProducts((prev) => prev.map((p) => p.id === editingId ? dbToProduct(updated as DBProduct) : p))
+      const res = editingId
+        ? await fetch(`/api/products/${editingId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+        : await fetch('/api/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: slugify(form.name), ...payload }),
+          })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        setSaveError(data?.error || `Error ${res.status}: no se pudo guardar el producto.`)
+        return
+      }
+
+      const saved = await res.json()
+      if (editingId) {
+        setProducts((prev) => prev.map((p) => p.id === editingId ? dbToProduct(saved as DBProduct) : p))
         setLastAdded({ name: form.name, action: 'updated' })
-        setForm(emptyForm)
         setEditingId(null)
-        setActivePanel(null)
-      }
-    } else {
-      // Nuevo producto
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: slugify(form.name), ...payload }),
-      })
-      if (res.ok) {
-        const newProd = await res.json()
-        setProducts((prev) => [dbToProduct(newProd as DBProduct), ...prev])
+      } else {
+        setProducts((prev) => [dbToProduct(saved as DBProduct), ...prev])
         setLastAdded({ name: form.name, action: 'added' })
-        setForm(emptyForm)
-        setActivePanel(null)
       }
+      setForm(emptyForm)
+      setActivePanel(null)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Error inesperado al guardar.')
+    } finally {
+      setSubmitting(false)
     }
-    setSubmitting(false)
   }
 
   async function handleAddCategory(e: React.FormEvent) {
@@ -406,6 +433,19 @@ export default function AdminProductosPage() {
             </p>
             <p className="text-xs text-green-600 mt-0.5">{lastAdded.name} ya aparece en el catálogo.</p>
           </div>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-red-800">No se pudo guardar</p>
+            <p className="text-xs text-red-600 mt-0.5">{saveError}</p>
+          </div>
+          <button onClick={() => setSaveError(null)} className="text-red-400 hover:text-red-600 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
@@ -523,7 +563,8 @@ export default function AdminProductosPage() {
                           type="number"
                           min={0}
                           value={form.stock[s] ?? 0}
-                          onChange={(e) => setSizeStock(s, parseInt(e.target.value) || 0)}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => setSizeStock(s, e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                           className="w-full bg-transparent text-sm text-gray-900 outline-none"
                         />
                       </div>
@@ -690,15 +731,21 @@ export default function AdminProductosPage() {
                   <span>·</span>
                   <span className="font-semibold text-gray-900">${product.price.toLocaleString('es-AR')}</span>
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap items-center gap-1">
                   {product.sizes.map((s) => {
                     const qty = product.stock?.[s]
+                    const agotado = qty === 0
                     return (
-                      <span key={s} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">
+                      <span key={s} className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${agotado ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
                         {s}{typeof qty === 'number' ? ` · ${qty}` : ''}
                       </span>
                     )
                   })}
+                  {isOutOfStock(product) && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+                      <AlertTriangle className="h-3 w-3" /> Sin stock
+                    </span>
+                  )}
                 </div>
                 <div className="flex gap-1.5 flex-wrap">
                   {product.isNew && <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">New Drop</span>}
@@ -736,15 +783,21 @@ export default function AdminProductosPage() {
                   <td className="px-5 py-3.5 capitalize text-sm text-gray-600">{product.category}</td>
                   <td className="px-5 py-3.5 text-sm font-semibold text-gray-900">${product.price.toLocaleString('es-AR')}</td>
                   <td className="px-5 py-3.5">
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap items-center gap-1">
                       {product.sizes.map((s) => {
                         const qty = product.stock?.[s]
+                        const agotado = qty === 0
                         return (
-                          <span key={s} className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-600">
+                          <span key={s} className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${agotado ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
                             {s}{typeof qty === 'number' ? ` · ${qty}` : ''}
                           </span>
                         )
                       })}
+                      {isOutOfStock(product) && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                          <AlertTriangle className="h-3 w-3" /> Sin stock
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="px-5 py-3.5">

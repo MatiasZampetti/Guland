@@ -42,6 +42,16 @@ export async function POST(request: Request) {
     }))
     const { data, error } = await admin.from('sales').insert(rows).select()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    await decrementStock(
+      admin,
+      items.map((it: { product_id?: string | null; size: string; quantity: number }) => ({
+        product_id: it.product_id || null,
+        size: it.size,
+        quantity: it.quantity,
+      }))
+    )
+
     return NextResponse.json(data, { status: 201 })
   }
 
@@ -60,5 +70,47 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  await decrementStock(admin, [{ product_id: product_id || null, size, quantity }])
+
   return NextResponse.json(data, { status: 201 })
+}
+
+type StockMovement = { product_id: string | null; size: string; quantity: number }
+
+// Descuenta del stock (jsonb { talle: cantidad }) de cada producto vendido.
+async function decrementStock(admin: ReturnType<typeof createAdminClient>, movements: StockMovement[]) {
+  // Agrupar las cantidades vendidas por producto+talle
+  const byProduct = new Map<string, Map<string, number>>()
+  for (const m of movements) {
+    if (!m.product_id) continue
+    const sizes = byProduct.get(m.product_id) ?? new Map<string, number>()
+    sizes.set(m.size, (sizes.get(m.size) ?? 0) + m.quantity)
+    byProduct.set(m.product_id, sizes)
+  }
+  if (byProduct.size === 0) return
+
+  const { data: products, error } = await admin
+    .from('products')
+    .select('id, stock')
+    .in('id', [...byProduct.keys()])
+  if (error || !products) return
+
+  await Promise.all(
+    products.map((p: { id: string; stock: Record<string, number> | null }) => {
+      const sold = byProduct.get(p.id)
+      if (!sold) return Promise.resolve()
+      const stock: Record<string, number> = { ...(p.stock ?? {}) }
+      let changed = false
+      for (const [size, qty] of sold) {
+        // Solo descontar si el producto trackea stock para ese talle
+        if (typeof stock[size] === 'number') {
+          stock[size] = Math.max(0, stock[size] - qty)
+          changed = true
+        }
+      }
+      if (!changed) return Promise.resolve()
+      return admin.from('products').update({ stock }).eq('id', p.id)
+    })
+  )
 }
