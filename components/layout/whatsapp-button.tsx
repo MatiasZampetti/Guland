@@ -1,7 +1,19 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useSettingsStore } from '@/lib/settings-store'
+
 export function WhatsAppButton() {
+  const load = useSettingsStore((s) => s.load)
+  const whatsappNumber = useSettingsStore((s) => s.whatsappNumber)
+
+  useEffect(() => {
+    load()
+  }, [load])
+
   return (
     <a
-      href="https://wa.me/5493573498196"
+      href={`https://wa.me/${whatsappNumber}`}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Contactar por WhatsApp"

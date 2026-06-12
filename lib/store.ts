@@ -2,16 +2,26 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { CartItem, PaymentMethod, Product, Size } from '@/types'
+import { CartItem, PaymentMethod, Product, ShippingMethod, Size } from '@/types'
+import { useSettingsStore } from '@/lib/settings-store'
+import { clampPercent } from '@/lib/shipping'
 
 interface CartStore {
   items: CartItem[]
   paymentMethod: PaymentMethod
+  shippingMethod: ShippingMethod
+  province: string | null
+  locality: string
+  postalCode: string
   addItem: (product: Product, size: Size) => void
   removeItem: (productId: string, size: Size) => void
   updateQuantity: (productId: string, size: Size, quantity: number) => void
   clearCart: () => void
   setPaymentMethod: (method: PaymentMethod) => void
+  setShippingMethod: (method: ShippingMethod) => void
+  setProvince: (province: string | null) => void
+  setLocality: (locality: string) => void
+  setPostalCode: (postalCode: string) => void
   /** Total ya con descuento aplicado según forma de pago */
   total: () => number
   /** Total base sin descuento (precio de tarjeta) */
@@ -24,6 +34,10 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       paymentMethod: null,
+      shippingMethod: null,
+      province: null,
+      locality: '',
+      postalCode: '',
 
       addItem: (product, size) => {
         const existing = get().items.find(
@@ -43,11 +57,17 @@ export const useCartStore = create<CartStore>()(
       },
 
       removeItem: (productId, size) => {
-        set((state) => ({
-          items: state.items.filter(
+        set((state) => {
+          const items = state.items.filter(
             (i) => !(i.product.id === productId && i.size === size)
-          ),
-        }))
+          )
+          // Al quedar el carrito vacío, también se limpian los datos del checkout
+          // para que un carrito nuevo arranque en blanco.
+          if (items.length === 0) {
+            return { items, paymentMethod: null, shippingMethod: null, province: null, locality: '', postalCode: '' }
+          }
+          return { items }
+        })
       },
 
       updateQuantity: (productId, size, quantity) => {
@@ -62,18 +82,34 @@ export const useCartStore = create<CartStore>()(
         }))
       },
 
-      clearCart: () => set({ items: [], paymentMethod: null }),
+      clearCart: () =>
+        set({
+          items: [],
+          paymentMethod: null,
+          shippingMethod: null,
+          province: null,
+          locality: '',
+          postalCode: '',
+        }),
 
       setPaymentMethod: (method) => set({ paymentMethod: method }),
+
+      setShippingMethod: (method) => set({ shippingMethod: method }),
+
+      setProvince: (province) => set({ province }),
+
+      setLocality: (locality) => set({ locality }),
+
+      setPostalCode: (postalCode) => set({ postalCode }),
 
       baseTotal: () =>
         get().items.reduce((sum, i) => sum + i.product.price * i.quantity, 0),
 
       total: () => {
         const base = get().baseTotal()
-        return get().paymentMethod === 'efectivo_transferencia'
-          ? Math.round(base * 0.85)
-          : base
+        if (get().paymentMethod !== 'efectivo_transferencia') return base
+        const pct = clampPercent(useSettingsStore.getState().cashDiscountPercent)
+        return Math.round(base * (1 - pct / 100))
       },
 
       itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),

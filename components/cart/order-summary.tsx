@@ -1,37 +1,71 @@
 'use client'
 
+import { useEffect } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
+import { useSettingsStore } from '@/lib/settings-store'
+import { clampPercent } from '@/lib/shipping'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
-
-const WHATSAPP_NUMBER = '5493573498196'
 
 const paymentLabels: Record<string, string> = {
   tarjeta_1pago: 'Tarjeta — 1 pago',
   tarjeta_3cuotas: 'Tarjeta — 3 cuotas sin interés',
-  efectivo_transferencia: 'Efectivo / Transferencia (−15%)',
+  efectivo_transferencia: 'Efectivo / Transferencia',
+}
+
+const shippingLabels: Record<string, string> = {
+  domicilio: 'A domicilio',
+  sucursal: 'A sucursal',
 }
 
 export function OrderSummary() {
   const items = useCartStore((s) => s.items)
   const paymentMethod = useCartStore((s) => s.paymentMethod)
+  const shippingMethod = useCartStore((s) => s.shippingMethod)
+  const province = useCartStore((s) => s.province)
+  const locality = useCartStore((s) => s.locality)
+  const postalCode = useCartStore((s) => s.postalCode)
   const total = useCartStore((s) => s.total())
   const baseTotal = useCartStore((s) => s.baseTotal())
-  const shipping = total >= 30000 ? 0 : 3500
+
+  const load = useSettingsStore((s) => s.load)
+  const whatsappNumber = useSettingsStore((s) => s.whatsappNumber)
+  const freeShippingThreshold = useSettingsStore((s) => s.freeShippingThreshold)
+  const discountPercent = clampPercent(useSettingsStore((s) => s.cashDiscountPercent))
+  const shippingFor = useSettingsStore((s) => s.shippingFor)
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const shipping = shippingFor(province, postalCode, shippingMethod, baseTotal)
+
+  const isReady =
+    !!paymentMethod &&
+    !!shippingMethod &&
+    !!province &&
+    locality.trim() !== ''
+
+  const efectivoLabel = `Efectivo / Transferencia (−${discountPercent}%)`
+  const pagoLabelOf = (m: string) =>
+    m === 'efectivo_transferencia' ? efectivoLabel : paymentLabels[m]
 
   const handleCheckout = () => {
+    if (!isReady || shipping === null) return
+
     const lines = items.map((item) => {
       const unitPrice = paymentMethod === 'efectivo_transferencia'
-        ? Math.round(item.product.price * 0.85)
+        ? Math.round(item.product.price * (1 - discountPercent / 100))
         : item.product.price
       const lineTotal = unitPrice * item.quantity
       return `• ${item.product.name} — Talle: ${item.size} — Cant: ${item.quantity} — $${lineTotal.toLocaleString('es-AR')}`
     })
 
-    const envio = shipping === 0 ? 'Gratis' : `$${shipping.toLocaleString('es-AR')}`
-    const pagoLabel = paymentMethod ? paymentLabels[paymentMethod] : 'No especificado'
+    const envioCosto = shipping === 0 ? 'Gratis' : `$${shipping.toLocaleString('es-AR')}`
+    const envioMetodo = shippingMethod ? shippingLabels[shippingMethod] : ''
+    const pagoLabel = paymentMethod ? pagoLabelOf(paymentMethod) : 'No especificado'
 
-    // Para tarjeta 3 cuotas, mostrar también el valor de cada cuota
     const cuotaInfo = paymentMethod === 'tarjeta_3cuotas'
       ? ` (3x $${Math.round((total + shipping) / 3).toLocaleString('es-AR')})`
       : ''
@@ -41,17 +75,21 @@ export function OrderSummary() {
       '',
       ...lines,
       '',
-      `Envío: ${envio}`,
+      `Envío: ${envioMetodo} — ${province}, ${locality}`,
+      `Costo de envío: ${envioCosto} (a confirmar)`,
       `Forma de pago: ${pagoLabel}`,
       `*Total: $${(total + shipping).toLocaleString('es-AR')}${cuotaInfo}*`,
     ].join('\n')
 
-    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
+    const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
     window.open(url, '_blank')
   }
 
   const isEfectivo = paymentMethod === 'efectivo_transferencia'
   const discount = baseTotal - total
+  const finalTotal = total + (shipping ?? 0)
+  const freeShippingEnabled = freeShippingThreshold > 0
+  const faltaParaGratis = freeShippingThreshold - total
 
   return (
     <div className="border border-white/10 bg-white/5 p-6">
@@ -61,7 +99,7 @@ export function OrderSummary() {
       {paymentMethod && (
         <div className="mb-4 rounded border border-white/10 bg-white/5 px-3 py-2">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Forma de pago</p>
-          <p className="mt-0.5 text-xs font-medium text-white">{paymentLabels[paymentMethod]}</p>
+          <p className="mt-0.5 text-xs font-medium text-white">{pagoLabelOf(paymentMethod)}</p>
         </div>
       )}
 
@@ -72,13 +110,19 @@ export function OrderSummary() {
         </div>
         {isEfectivo && (
           <div className="flex justify-between text-green-400">
-            <span>Descuento (15%)</span>
+            <span>Descuento ({discountPercent}%)</span>
             <span>−${discount.toLocaleString('es-AR')}</span>
           </div>
         )}
         <div className="flex justify-between text-white/60">
           <span>Envío</span>
-          <span>{shipping === 0 ? 'Gratis' : `$${shipping.toLocaleString('es-AR')}`}</span>
+          <span>
+            {shipping === null
+              ? 'A calcular'
+              : shipping === 0
+                ? 'Gratis'
+                : `$${shipping.toLocaleString('es-AR')}`}
+          </span>
         </div>
       </div>
 
@@ -87,32 +131,44 @@ export function OrderSummary() {
       <div className="flex justify-between text-sm font-semibold">
         <span>Total</span>
         <span className={isEfectivo ? 'text-green-400' : ''}>
-          ${(total + shipping).toLocaleString('es-AR')}
+          ${finalTotal.toLocaleString('es-AR')}
         </span>
       </div>
 
       {paymentMethod === 'tarjeta_3cuotas' && (
         <p className="mt-1.5 text-xs text-white/40">
-          3x ${Math.round((total + shipping) / 3).toLocaleString('es-AR')} sin interés
+          3x ${Math.round(finalTotal / 3).toLocaleString('es-AR')} sin interés
         </p>
       )}
 
-      {total < 30000 && (
+      {freeShippingEnabled && faltaParaGratis > 0 && (
         <p className="mt-3 text-xs text-white/40">
-          Te faltan ${(30000 - total).toLocaleString('es-AR')} para envío gratis
+          Te faltan ${faltaParaGratis.toLocaleString('es-AR')} para envío gratis
         </p>
+      )}
+
+      {!isReady && (
+        <div className="mt-6 flex items-start gap-2 rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2.5">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+          <p className="text-xs text-amber-400">
+            Es obligatorio completar tus datos antes de finalizar la compra por WhatsApp.
+          </p>
+        </div>
       )}
 
       <Button
         onClick={handleCheckout}
-        className="mt-6 w-full rounded-none bg-[#25D366] py-6 text-xs font-bold tracking-widest hover:bg-[#1ebe5d] text-white"
+        disabled={!isReady}
+        className="mt-4 w-full rounded-none bg-[#25D366] py-6 text-xs font-bold tracking-widest hover:bg-[#1ebe5d] text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#25D366]"
       >
         FINALIZAR POR WHATSAPP →
       </Button>
 
-      <p className="mt-3 text-center text-xs text-white/20">
-        Te vamos a responder a la brevedad
-      </p>
+      {isReady && (
+        <p className="mt-3 text-center text-xs text-white/20">
+          Te vamos a responder a la brevedad
+        </p>
+      )}
     </div>
   )
 }

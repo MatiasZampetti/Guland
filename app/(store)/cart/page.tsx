@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useCartStore } from '@/lib/store'
 import { CartItem } from '@/components/cart/cart-item'
+import { CheckoutForm } from '@/components/cart/checkout-form'
 import { OrderSummary } from '@/components/cart/order-summary'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
@@ -35,8 +36,9 @@ export default function CartPage() {
       <p className="mb-8 sm:mb-10 text-xs font-semibold tracking-widest text-white/40">
         {items.length} {items.length === 1 ? 'PRODUCTO' : 'PRODUCTOS'}
       </p>
-      <div className="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="space-y-6 sm:space-y-8">
+        {/* Productos */}
+        <div>
           {items.map((item, i) => (
             <div key={`${item.product.id}-${item.size}`}>
               <CartItem item={item} />
@@ -48,10 +50,11 @@ export default function CartPage() {
             ← SEGUIR COMPRANDO
           </Link>
         </div>
-        <div className="lg:col-span-1">
-          <div className="lg:sticky lg:top-24">
-            <OrderSummary />
-          </div>
+
+        {/* Formularios: mismo tamaño, lado a lado */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <CheckoutForm />
+          <OrderSummary />
         </div>
       </div>
     </div>
