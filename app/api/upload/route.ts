@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/supabase/require-admin'
 import { NextResponse } from 'next/server'
+import sharp from 'sharp'
 
 export async function POST(request: Request) {
   const { error: authError } = await requireAdmin()
@@ -12,13 +13,31 @@ export async function POST(request: Request) {
 
   if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
-  const ext = file.name.split('.').pop()
+  const inputBuffer = Buffer.from(await file.arrayBuffer())
+
+  // Redimensionamos a un máximo razonable y convertimos a WebP para bajar el peso.
+  // Si sharp no puede procesar el archivo (formato no soportado), subimos el original.
+  let body: Buffer = inputBuffer
+  let contentType = file.type
+  let ext = file.name.split('.').pop() ?? 'bin'
+  try {
+    body = await sharp(inputBuffer)
+      .rotate() // respeta la orientación EXIF
+      .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer()
+    contentType = 'image/webp'
+    ext = 'webp'
+  } catch {
+    // fallback: se sube el archivo tal cual
+  }
+
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
   const admin = createAdminClient()
   const { error } = await admin.storage
     .from(bucket)
-    .upload(fileName, file, { contentType: file.type, upsert: false })
+    .upload(fileName, body, { contentType, upsert: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

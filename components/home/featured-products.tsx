@@ -1,14 +1,14 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
-import { dbToProduct, type DBProduct } from '@/lib/db-mapper'
+import { createPublicClient } from '@/lib/supabase/public'
+import { dbToProduct, CARD_COLUMNS, type DBProduct } from '@/lib/db-mapper'
 import { ProductCard } from '@/components/shop/product-card'
 import { AnimatedTitle } from '@/components/ui/animated-title'
 
 export async function FeaturedProducts() {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const { data } = await supabase
     .from('products')
-    .select('*')
+    .select(CARD_COLUMNS)
     .eq('featured', true)
     .eq('in_home', true)
     .order('created_at', { ascending: false })

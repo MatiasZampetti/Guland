@@ -1,13 +1,13 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
 import { AnimatedTitle } from '@/components/ui/animated-title'
 
 export async function CategoryGrid() {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   const { data: categories } = await supabase
     .from('categories')
-    .select('*')
+    .select('slug, label, image_url, created_at')
     .order('created_at', { ascending: true })
 
   return (
