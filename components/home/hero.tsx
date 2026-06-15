@@ -1,14 +1,18 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export function Hero() {
   return (
     <section id="hero" className="relative -mt-16 h-[100svh] min-h-[320px] overflow-hidden select-none">
 
       {/* Fondo */}
-      <img
+      <Image
         src="/hero-bg.png"
         alt="Guland hero"
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center"
+        fill
+        priority
+        sizes="100vw"
+        className="pointer-events-none object-cover object-center"
       />
 
       {/* Gradiente: oscurece la izquierda para legibilidad del texto */}

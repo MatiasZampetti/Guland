@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Minus, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useCartStore } from '@/lib/store'
@@ -20,11 +21,13 @@ export function CartItem({ item }: CartItemProps) {
 
   return (
     <div className="flex gap-3 sm:gap-4 py-4">
-      <div className="h-24 w-18 sm:h-28 sm:w-20 shrink-0 overflow-hidden bg-white/5">
-        <img
+      <div className="relative h-24 w-18 sm:h-28 sm:w-20 shrink-0 overflow-hidden bg-white/5">
+        <Image
           src={item.product.images[0]}
           alt={item.product.name}
-          className="h-full w-full object-cover"
+          fill
+          sizes="80px"
+          className="object-cover"
         />
       </div>
 

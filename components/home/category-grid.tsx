@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { AnimatedTitle } from '@/components/ui/animated-title'
 
@@ -34,10 +35,12 @@ export async function CategoryGrid() {
               href={`/shop/${cat.slug}`}
               className="group relative aspect-[3/4] overflow-hidden bg-black"
             >
-              <img
+              <Image
                 src={cat.image_url}
                 alt={cat.label}
-                className="h-full w-full object-cover opacity-80 transition-all duration-500 group-hover:scale-105 group-hover:opacity-60"
+                fill
+                sizes="(min-width: 768px) 33vw, 50vw"
+                className="object-cover opacity-80 transition-all duration-500 group-hover:scale-105 group-hover:opacity-60"
               />
               <div className="absolute inset-0 flex flex-col justify-end p-3 sm:p-4">
                 <p

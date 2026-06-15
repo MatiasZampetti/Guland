@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface ProductGalleryProps {
@@ -19,10 +20,13 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
     <div className="flex flex-col gap-3">
       {/* Imagen principal con flechas en hover */}
       <div className="group relative aspect-[3/4] w-full overflow-hidden bg-gray-50">
-        <img
+        <Image
           src={images[selected]}
           alt={name}
-          className="h-full w-full object-cover"
+          fill
+          priority
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          className="object-cover"
         />
 
         {hasMultiple && (
@@ -58,7 +62,7 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
                 selected === i ? 'border-white' : 'border-transparent opacity-50'
               }`}
             >
-              <img src={img} alt={`${name} ${i + 1}`} className="h-full w-full object-cover" />
+              <Image src={img} alt={`${name} ${i + 1}`} width={64} height={64} className="h-full w-full object-cover" />
             </button>
           ))}
         </div>

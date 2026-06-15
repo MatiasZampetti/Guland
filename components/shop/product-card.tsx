@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Product } from '@/types'
 
 interface ProductCardProps {
@@ -17,16 +18,20 @@ export function ProductCard({ product, catalog = false }: ProductCardProps) {
 
       {/* Imagen — ambas absolute para evitar bug de hover */}
       <div className="relative aspect-[3/4] overflow-hidden bg-[#1a1a1a]">
-        <img
+        <Image
           src={product.images[0]}
           alt={product.name}
-          className="absolute inset-0 h-full w-full object-cover transition-all duration-500 group-hover:scale-105 group-hover:opacity-0"
+          fill
+          sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw"
+          className="object-cover transition-all duration-500 group-hover:scale-105 group-hover:opacity-0"
         />
         {product.images[1] && (
-          <img
+          <Image
             src={product.images[1]}
             alt={`${product.name} — vista alternativa`}
-            className="absolute inset-0 h-full w-full object-cover opacity-0 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
+            fill
+            sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw"
+            className="object-cover opacity-0 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
           />
         )}
         {product.isNew && (
