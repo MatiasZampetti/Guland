@@ -91,6 +91,7 @@ export default function ProductPage({ params }: Props) {
             available={product.sizes}
             selected={selectedSize}
             onSelect={setSelectedSize}
+            guide={product.sizeGuide}
           />
 
           <div className="flex gap-2">

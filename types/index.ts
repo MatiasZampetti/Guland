@@ -1,5 +1,21 @@
 export type Size = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL'
 
+/** Medidas (en cm) de un talle para la guía de talles. */
+export interface SizeMeasurements {
+  pecho: string
+  cintura: string
+  cadera: string
+}
+
+/**
+ * Guía de talles editable por producto. Columnas fijas (pecho/cintura/cadera);
+ * el admin completa los valores por talle. Campos vacíos => se usa el default.
+ */
+export interface SizeGuide {
+  measurements: Partial<Record<Size, SizeMeasurements>>
+  note?: string
+}
+
 export type Category = string
 
 export type PaymentMethod =
@@ -24,6 +40,7 @@ export interface Product {
   isNew?: boolean
   isOnSale?: boolean
   inHome?: boolean
+  sizeGuide?: SizeGuide
 }
 
 export interface CartItem {

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Plus, Trash2, MoreHorizontal, Search, CheckCircle, X, Tag, Upload, ImagePlus, Pencil, AlertTriangle } from 'lucide-react'
 import { dbToProduct, type DBProduct } from '@/lib/db-mapper'
 import { type Product, Size } from '@/types'
+import { SIZE_GUIDE_FIELDS, DEFAULT_MEASUREMENTS, DEFAULT_GUIDE_NOTE, SIZE_ORDER } from '@/lib/size-guide'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,6 +63,10 @@ const emptyForm = {
   category: '',
   sizes: [] as Size[],
   stock: {} as Record<string, number>,
+  sizeGuide: {
+    measurements: {} as Record<string, { pecho: string; cintura: string; cadera: string }>,
+    note: '',
+  },
   description: '',
   image1: '',
   image1File: null as File | null,
@@ -190,6 +195,15 @@ export default function AdminProductosPage() {
       category: product.category,
       sizes: product.sizes as Size[],
       stock: product.stock ?? {},
+      sizeGuide: {
+        measurements: Object.fromEntries(
+          Object.entries(product.sizeGuide?.measurements ?? {}).map(([s, m]) => [
+            s,
+            { pecho: m?.pecho ?? '', cintura: m?.cintura ?? '', cadera: m?.cadera ?? '' },
+          ])
+        ),
+        note: product.sizeGuide?.note ?? '',
+      },
       description: product.description,
       image1: product.images[0] ?? '',
       image1File: null,
@@ -223,6 +237,19 @@ export default function AdminProductosPage() {
 
   function setSizeStock(size: Size, value: number) {
     setForm((f) => ({ ...f, stock: { ...f.stock, [size]: Math.max(0, value) } }))
+  }
+
+  function setGuideValue(size: Size, field: 'pecho' | 'cintura' | 'cadera', value: string) {
+    setForm((f) => {
+      const prev = f.sizeGuide.measurements[size] ?? { pecho: '', cintura: '', cadera: '' }
+      return {
+        ...f,
+        sizeGuide: {
+          ...f.sizeGuide,
+          measurements: { ...f.sizeGuide.measurements, [size]: { ...prev, [field]: value } },
+        },
+      }
+    })
   }
 
   function setVisibilidad(value: Visibilidad) {
@@ -286,6 +313,17 @@ export default function AdminProductosPage() {
         form.sizes.map((s) => [s, form.stock[s] ?? 0])
       )
 
+      // Guía de talles: solo guarda lo que el admin cargó (campos vacíos => default en la tienda).
+      const measurements: Record<string, { pecho: string; cintura: string; cadera: string }> = {}
+      for (const s of form.sizes) {
+        const m = form.sizeGuide.measurements[s]
+        const pecho = m?.pecho.trim() ?? ''
+        const cintura = m?.cintura.trim() ?? ''
+        const cadera = m?.cadera.trim() ?? ''
+        if (pecho || cintura || cadera) measurements[s] = { pecho, cintura, cadera }
+      }
+      const size_guide = { measurements, note: form.sizeGuide.note.trim() }
+
       const payload = {
         name: form.name,
         price: parseInt(form.price),
@@ -294,6 +332,7 @@ export default function AdminProductosPage() {
         images,
         sizes: form.sizes,
         stock: stockClean,
+        size_guide,
         featured: form.visibilidad === 'destacados',
         is_new: form.visibilidad === 'new',
         is_on_sale: form.visibilidad === 'sale',
@@ -573,6 +612,57 @@ export default function AdminProductosPage() {
                 </div>
               )}
             </div>
+
+            {form.sizes.length > 0 && (
+              <div className="sm:col-span-2 lg:col-span-3">
+                <label className={labelClass}>Guía de talles (medidas en cm)</label>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <p className="mb-2 text-[11px] text-gray-400">
+                    Dejá un campo vacío para usar la medida por defecto (la del placeholder).
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[420px] border-separate border-spacing-y-1">
+                      <thead>
+                        <tr>
+                          <th className="w-12 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500">Talle</th>
+                          {SIZE_GUIDE_FIELDS.map((col) => (
+                            <th key={col.key} className="px-1 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500">{col.label}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {SIZE_ORDER.filter((s) => form.sizes.includes(s)).map((s) => (
+                          <tr key={s}>
+                            <td className="pr-2 text-xs font-semibold text-gray-700">{s}</td>
+                            {SIZE_GUIDE_FIELDS.map((col) => (
+                              <td key={col.key} className="px-1">
+                                <input
+                                  type="text"
+                                  value={form.sizeGuide.measurements[s]?.[col.key] ?? ''}
+                                  onChange={(e) => setGuideValue(s, col.key, e.target.value)}
+                                  placeholder={DEFAULT_MEASUREMENTS[s][col.key]}
+                                  className="w-full rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-900 outline-none focus:border-gray-400"
+                                />
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-3">
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Nota (opcional)</label>
+                    <input
+                      type="text"
+                      value={form.sizeGuide.note}
+                      onChange={(e) => setForm({ ...form, sizeGuide: { ...form.sizeGuide, note: e.target.value } })}
+                      placeholder={DEFAULT_GUIDE_NOTE}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="sm:col-span-2 lg:col-span-3">
               <label className={labelClass}>Descripción</label>

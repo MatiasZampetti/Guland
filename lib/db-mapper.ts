@@ -1,4 +1,4 @@
-import type { Product, Size } from '@/types'
+import type { Product, Size, SizeGuide } from '@/types'
 
 /**
  * Columnas necesarias para renderizar una card de producto (grilla / home).
@@ -21,6 +21,7 @@ export interface DBProduct {
   is_new: boolean
   is_on_sale: boolean
   in_home: boolean
+  size_guide?: SizeGuide | null
   created_at: string
 }
 
@@ -39,5 +40,6 @@ export function dbToProduct(p: DBProduct): Product {
     isNew: p.is_new,
     isOnSale: p.is_on_sale,
     inHome: p.in_home,
+    sizeGuide: p.size_guide ?? undefined,
   }
 }

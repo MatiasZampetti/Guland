@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Size } from '@/types'
+import { Size, SizeGuide } from '@/types'
+import { resolveSizeGuide } from '@/lib/size-guide'
 import {
   Dialog,
   DialogContent,
@@ -14,19 +15,12 @@ interface SizeSelectorProps {
   available: Size[]
   selected: Size | null
   onSelect: (size: Size) => void
+  guide?: SizeGuide
 }
 
-const sizeGuide = [
-  { talle: 'XS', pecho: '82–86', cintura: '64–68', cadera: '88–92' },
-  { talle: 'S',  pecho: '87–91', cintura: '69–73', cadera: '93–97' },
-  { talle: 'M',  pecho: '92–96', cintura: '74–78', cadera: '98–102' },
-  { talle: 'L',  pecho: '97–102', cintura: '79–84', cadera: '103–108' },
-  { talle: 'XL', pecho: '103–108', cintura: '85–90', cadera: '109–114' },
-  { talle: 'XXL', pecho: '109–116', cintura: '91–98', cadera: '115–122' },
-]
-
-export function SizeSelector({ available, selected, onSelect }: SizeSelectorProps) {
+export function SizeSelector({ available, selected, onSelect, guide }: SizeSelectorProps) {
   const [open, setOpen] = useState(false)
+  const { rows: sizeGuide, note } = resolveSizeGuide(available, guide)
 
   return (
     <div>
@@ -102,7 +96,7 @@ export function SizeSelector({ available, selected, onSelect }: SizeSelectorProp
           </table>
 
           <p className="mt-4 text-[11px] leading-relaxed text-white/30">
-            Si estás entre dos talles, te recomendamos elegir el más grande para un fit más cómodo.
+            {note}
           </p>
         </DialogContent>
       </Dialog>

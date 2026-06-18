@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   if (authError) return authError
 
   const body = await request.json()
-  const { slug, name, price, category_slug, description, images, sizes, stock, featured, is_new, is_on_sale, in_home } = body
+  const { slug, name, price, category_slug, description, images, sizes, stock, size_guide, featured, is_new, is_on_sale, in_home } = body
 
   if (!slug || !name || !price || !category_slug || !images?.length || !sizes?.length) {
     return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('products')
-    .insert({ slug, name, price, category_slug, description: description ?? '', images, sizes, stock: stock ?? {}, featured: !!featured, is_new: !!is_new, is_on_sale: !!is_on_sale, in_home: !!in_home })
+    .insert({ slug, name, price, category_slug, description: description ?? '', images, sizes, stock: stock ?? {}, size_guide: size_guide ?? {}, featured: !!featured, is_new: !!is_new, is_on_sale: !!is_on_sale, in_home: !!in_home })
     .select()
     .single()
 
