@@ -25,6 +25,7 @@ export function OrderSummary() {
   const shippingMethod = useCartStore((s) => s.shippingMethod)
   const province = useCartStore((s) => s.province)
   const locality = useCartStore((s) => s.locality)
+  const localityConfirmed = useCartStore((s) => s.localityConfirmed)
   const postalCode = useCartStore((s) => s.postalCode)
   const total = useCartStore((s) => s.total())
   const baseTotal = useCartStore((s) => s.baseTotal())
@@ -45,7 +46,8 @@ export function OrderSummary() {
     !!paymentMethod &&
     !!shippingMethod &&
     !!province &&
-    locality.trim() !== ''
+    locality.trim() !== '' &&
+    localityConfirmed
 
   const efectivoLabel = `Efectivo / Transferencia (−${discountPercent}%)`
   const pagoLabelOf = (m: string) =>

@@ -12,6 +12,8 @@ interface CartStore {
   shippingMethod: ShippingMethod
   province: string | null
   locality: string
+  /** true solo cuando la localidad fue elegida de la lista (no texto libre suelto). */
+  localityConfirmed: boolean
   postalCode: string
   addItem: (product: Product, size: Size) => void
   removeItem: (productId: string, size: Size) => void
@@ -20,7 +22,7 @@ interface CartStore {
   setPaymentMethod: (method: PaymentMethod) => void
   setShippingMethod: (method: ShippingMethod) => void
   setProvince: (province: string | null) => void
-  setLocality: (locality: string) => void
+  setLocality: (locality: string, confirmed?: boolean) => void
   setPostalCode: (postalCode: string) => void
   /** Total ya con descuento aplicado según forma de pago */
   total: () => number
@@ -37,6 +39,7 @@ export const useCartStore = create<CartStore>()(
       shippingMethod: null,
       province: null,
       locality: '',
+      localityConfirmed: false,
       postalCode: '',
 
       addItem: (product, size) => {
@@ -64,7 +67,7 @@ export const useCartStore = create<CartStore>()(
           // Al quedar el carrito vacío, también se limpian los datos del checkout
           // para que un carrito nuevo arranque en blanco.
           if (items.length === 0) {
-            return { items, paymentMethod: null, shippingMethod: null, province: null, locality: '', postalCode: '' }
+            return { items, paymentMethod: null, shippingMethod: null, province: null, locality: '', localityConfirmed: false, postalCode: '' }
           }
           return { items }
         })
@@ -89,6 +92,7 @@ export const useCartStore = create<CartStore>()(
           shippingMethod: null,
           province: null,
           locality: '',
+          localityConfirmed: false,
           postalCode: '',
         }),
 
@@ -96,9 +100,12 @@ export const useCartStore = create<CartStore>()(
 
       setShippingMethod: (method) => set({ shippingMethod: method }),
 
-      setProvince: (province) => set({ province }),
+      // Al cambiar de provincia, la localidad elegida deja de ser válida.
+      setProvince: (province) =>
+        set({ province, locality: '', localityConfirmed: false }),
 
-      setLocality: (locality) => set({ locality }),
+      setLocality: (locality, confirmed = false) =>
+        set({ locality, localityConfirmed: confirmed }),
 
       setPostalCode: (postalCode) => set({ postalCode }),
 

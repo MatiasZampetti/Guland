@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useCartStore } from '@/lib/store'
 import { useSettingsStore } from '@/lib/settings-store'
 import { PaymentSelector } from '@/components/cart/payment-selector'
+import { LocalityAutocomplete } from '@/components/cart/locality-autocomplete'
 
 export function CheckoutForm() {
   const baseTotal = useCartStore((s) => s.baseTotal())
@@ -14,6 +15,7 @@ export function CheckoutForm() {
   const province = useCartStore((s) => s.province)
   const setProvince = useCartStore((s) => s.setProvince)
   const locality = useCartStore((s) => s.locality)
+  const localityConfirmed = useCartStore((s) => s.localityConfirmed)
   const setLocality = useCartStore((s) => s.setLocality)
   const postalCode = useCartStore((s) => s.postalCode)
 
@@ -92,16 +94,12 @@ export function CheckoutForm() {
             </select>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold tracking-wider text-white/50">LOCALIDAD</label>
-            <input
-              type="text"
-              value={locality}
-              onChange={(e) => setLocality(e.target.value)}
-              placeholder="Tu pueblo / ciudad"
-              className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-red-600"
-            />
-          </div>
+          <LocalityAutocomplete
+            province={province}
+            value={locality}
+            confirmed={localityConfirmed}
+            onChange={setLocality}
+          />
         </div>
 
         {/* Envío estimado */}
