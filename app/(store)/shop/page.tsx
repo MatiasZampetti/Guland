@@ -59,6 +59,18 @@ function ShopContent() {
     return matchesCat && matchesSize && matchesFilter
   })
 
+  const filterLabels: Record<NonNullable<ShopFilter>, string> = {
+    destacados: 'DESTACADOS',
+    'new-drops': 'NEW DROPS',
+    sale: 'SALE',
+  }
+
+  const activeFilters = [
+    selectedFilter ? filterLabels[selectedFilter] : null,
+    selectedCategory ? selectedCategory.replace(/-/g, ' ').toUpperCase() : null,
+    selectedSizes.length > 0 ? `TALLE ${selectedSizes.join(', ')}` : null,
+  ].filter(Boolean)
+
   const sidebarProps = {
     selectedCategory,
     selectedSizes,
@@ -76,6 +88,11 @@ function ShopContent() {
           <AnimatedTitle as="h1" className="text-5xl sm:text-7xl leading-none md:text-9xl" style={{ fontFamily: 'var(--font-bebas)' }}>
             TIENDA
           </AnimatedTitle>
+          {activeFilters.length > 0 && (
+            <p className="mt-2 text-xs font-bold tracking-widest text-red-500">
+              {activeFilters.join(' · ')}
+            </p>
+          )}
           <p className="mt-1 text-xs font-semibold tracking-widest text-white/40">
             {filtered.length} PRODUCTOS
           </p>

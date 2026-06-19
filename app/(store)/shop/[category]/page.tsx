@@ -61,6 +61,7 @@ export default function CategoryPage({ params }: Props) {
   const handleClear = () => {
     setSelectedSizes([])
     setSelectedFilter(null)
+    router.push('/shop')
   }
 
   const filtered = allProducts.filter((p) => {
