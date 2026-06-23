@@ -17,6 +17,7 @@ const paymentLabels: Record<string, string> = {
 const shippingLabels: Record<string, string> = {
   domicilio: 'A domicilio',
   sucursal: 'A sucursal',
+  local: 'Retiro por local',
 }
 
 export function OrderSummary() {
@@ -34,6 +35,7 @@ export function OrderSummary() {
   const whatsappNumber = useSettingsStore((s) => s.whatsappNumber)
   const freeShippingThreshold = useSettingsStore((s) => s.freeShippingThreshold)
   const discountPercent = clampPercent(useSettingsStore((s) => s.cashDiscountPercent))
+  const storeAddress = useSettingsStore((s) => s.storeAddress)
   const shippingFor = useSettingsStore((s) => s.shippingFor)
 
   useEffect(() => {
@@ -77,7 +79,9 @@ export function OrderSummary() {
       '',
       ...lines,
       '',
-      `Envío: ${envioMetodo} — ${province}, ${locality}`,
+      shippingMethod === 'local' && storeAddress
+        ? `Envío: ${envioMetodo} — ${province}, ${locality}, ${storeAddress} —`
+        : `Envío: ${envioMetodo} — ${province}, ${locality}`,
       `Costo de envío: ${envioCosto} (a confirmar)`,
       `Forma de pago: ${pagoLabel}`,
       `*Total: $${(total + shipping).toLocaleString('es-AR')}${cuotaInfo}*`,

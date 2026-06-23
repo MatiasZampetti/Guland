@@ -24,7 +24,7 @@ export type PaymentMethod =
   | 'efectivo_transferencia'
   | null
 
-export type ShippingMethod = 'domicilio' | 'sucursal' | null
+export type ShippingMethod = 'domicilio' | 'sucursal' | 'local' | null
 
 export interface Product {
   id: string

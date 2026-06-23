@@ -46,7 +46,9 @@ export const useCartStore = create<CartStore>()(
         const existing = get().items.find(
           (i) => i.product.id === product.id && i.size === size
         )
+        const stockForSize = product.stock?.[size] ?? Infinity
         if (existing) {
+          if (existing.quantity >= stockForSize) return
           set((state) => ({
             items: state.items.map((i) =>
               i.product.id === product.id && i.size === size
@@ -98,7 +100,15 @@ export const useCartStore = create<CartStore>()(
 
       setPaymentMethod: (method) => set({ paymentMethod: method }),
 
-      setShippingMethod: (method) => set({ shippingMethod: method }),
+      setShippingMethod: (method) => {
+        if (method === 'local') {
+          set({ shippingMethod: method, province: 'Córdoba', locality: 'Villa del Rosario', localityConfirmed: true })
+        } else if (get().shippingMethod === 'local') {
+          set({ shippingMethod: method, province: null, locality: '', localityConfirmed: false })
+        } else {
+          set({ shippingMethod: method })
+        }
+      },
 
       // Al cambiar de provincia, la localidad elegida deja de ser válida.
       setProvince: (province) =>

@@ -36,6 +36,7 @@ export async function GET() {
     cashDiscountPercent: clampPercent(num(raw.cash_discount_percent, DEFAULT_SETTINGS.cashDiscountPercent)),
     defaultDomicilio: Math.max(0, num(raw.default_shipping_domicilio, DEFAULT_SETTINGS.defaultDomicilio)),
     defaultSucursal: Math.max(0, num(raw.default_shipping_sucursal, DEFAULT_SETTINGS.defaultSucursal)),
+    storeAddress: raw.store_address ?? DEFAULT_SETTINGS.storeAddress,
   }
 
   const mappedZones = ((zones as RawZone[] | null) ?? []).map((z) => ({
@@ -61,6 +62,7 @@ const FIELDS: { prop: string; key: string; normalize: (v: unknown) => string }[]
   { prop: 'cashDiscountPercent', key: 'cash_discount_percent', normalize: (v) => String(clampPercent(Number(v) || 0)) },
   { prop: 'defaultDomicilio', key: 'default_shipping_domicilio', normalize: (v) => String(Math.max(0, Math.round(Number(v) || 0))) },
   { prop: 'defaultSucursal', key: 'default_shipping_sucursal', normalize: (v) => String(Math.max(0, Math.round(Number(v) || 0))) },
+  { prop: 'storeAddress', key: 'store_address', normalize: (v) => String(v).trim() },
 ]
 
 export async function PATCH(request: Request) {

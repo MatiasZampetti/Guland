@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { HeroTicker } from '@/components/home/hero-ticker'
 
 export function Hero() {
   return (
@@ -102,25 +103,7 @@ export function Hero() {
       </div>
 
       {/* Ticker inferior */}
-      <div className="absolute bottom-0 inset-x-0 overflow-hidden bg-red-700 py-2.5">
-        <div className="flex whitespace-nowrap animate-ticker">
-          {[...Array(2)].map((_, i) => (
-            <span
-              key={i}
-              className="text-white/90"
-              style={{
-                fontFamily: 'var(--font-bebas)',
-                fontSize: '0.95rem',
-                letterSpacing: '0.15em',
-              }}
-            >
-              {'GULAND CLOTHES • ENVÍO GRATIS +$100.000 • 3 CUOTAS SIN INTERÉS • DESCUENTO EN EFECTIVO Y TRANSFERENCIA • '}
-              {'GULAND CLOTHES • ENVÍO GRATIS +$100.000 • 3 CUOTAS SIN INTERÉS • DESCUENTO EN EFECTIVO Y TRANSFERENCIA • '}
-              {'GULAND CLOTHES • ENVÍO GRATIS +$100.000 • 3 CUOTAS SIN INTERÉS • DESCUENTO EN EFECTIVO Y TRANSFERENCIA • '}
-            </span>
-          ))}
-        </div>
-      </div>
+      <HeroTicker />
 
     </section>
   )

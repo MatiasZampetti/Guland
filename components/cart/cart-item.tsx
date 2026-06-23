@@ -12,6 +12,8 @@ interface CartItemProps {
 
 export function CartItem({ item }: CartItemProps) {
   const { updateQuantity, removeItem, paymentMethod } = useCartStore()
+  const stockForSize = item.product.stock?.[item.size] ?? Infinity
+  const atStockLimit = item.quantity >= stockForSize
 
   const unitPrice = paymentMethod === 'efectivo_transferencia'
     ? Math.round(item.product.price * 0.85)
@@ -60,7 +62,8 @@ export function CartItem({ item }: CartItemProps) {
               variant="ghost"
               size="icon"
               onClick={() => updateQuantity(item.product.id, item.size, item.quantity + 1)}
-              className="h-9 w-9 sm:h-8 sm:w-8 rounded-none"
+              disabled={atStockLimit}
+              className="h-9 w-9 sm:h-8 sm:w-8 rounded-none disabled:opacity-30"
             >
               <Plus className="h-3 w-3" />
             </Button>

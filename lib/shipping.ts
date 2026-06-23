@@ -24,6 +24,7 @@ export interface StoreSettings {
   cashDiscountPercent: number
   defaultDomicilio: number
   defaultSucursal: number
+  storeAddress: string
 }
 
 /** Limita un porcentaje a un rango válido 0–100 (evita totales negativos por config errónea). */
@@ -36,6 +37,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   cashDiscountPercent: 15,
   defaultDomicilio: 7000,
   defaultSucursal: 6000,
+  storeAddress: '',
 }
 
 /**
@@ -52,6 +54,7 @@ export function resolveShipping(
   baseTotal: number,
 ): number | null {
   if (!provinceName || !method) return null
+  if (method === 'local') return 0
   if (settings.freeShippingThreshold > 0 && baseTotal >= settings.freeShippingThreshold) return 0
 
   const zone = zones.find((z) => z.name === provinceName)

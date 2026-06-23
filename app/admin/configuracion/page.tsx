@@ -22,6 +22,7 @@ interface Settings {
   cashDiscountPercent: number
   defaultDomicilio: number
   defaultSucursal: number
+  storeAddress: string
 }
 
 /** Input numérico que confirma el cambio al salir del foco. */
@@ -384,6 +385,16 @@ export default function AdminConfiguracionPage() {
                 />
                 <p className="mt-1 text-[11px] text-gray-400">Porcentaje de descuento por pago en efectivo.</p>
               </div>
+            </div>
+            <div className="mt-4 border-t border-gray-100 pt-4">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Dirección del local</label>
+              <TextCell
+                value={settings.storeAddress}
+                onCommit={(v) => saveSettings({ storeAddress: v })}
+                placeholder="Ej: Av. San Martín 123, Villa del Rosario"
+                className="mt-1.5 w-full"
+              />
+              <p className="mt-1 text-[11px] text-gray-400">Se muestra en el carrito cuando el cliente elige retiro por local.</p>
             </div>
           </section>
 

@@ -9,21 +9,28 @@ const leagueSpartan = League_Spartan({ weight: '900', subsets: ['latin'], variab
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 
+const description = 'Tienda de ropa urbana online. Buzos, camperas, remeras, jeans y más. Envíos a todo el país. Descuento pagando con efectivo o transferencia.'
+
 export const metadata: Metadata = {
-  title: 'Guland',
-  description: 'Ropa para los que no siguen tendencias, las crean.',
+  metadataBase: new URL('https://www.guland.com.ar'),
+  title: {
+    default: 'Guland | Ropa Urbana Online',
+    template: '%s | Guland',
+  },
+  description,
+  keywords: ['ropa urbana', 'indumentaria', 'buzos', 'camperas', 'remeras', 'jeans', 'streetwear', 'Argentina', 'tienda online'],
   openGraph: {
-    title: 'Guland',
-    description: 'Ropa para los que no siguen tendencias, las crean.',
-    url: 'https://guland.com.ar',
+    title: 'Guland | Ropa Urbana Online',
+    description,
+    url: 'https://www.guland.com.ar',
     siteName: 'Guland',
     locale: 'es_AR',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Guland',
-    description: 'Ropa para los que no siguen tendencias, las crean.',
+    title: 'Guland | Ropa Urbana Online',
+    description,
   },
 }
 
