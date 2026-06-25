@@ -29,6 +29,10 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       return NextResponse.redirect(new URL('/cuenta/login?redirect=/admin', request.url))
     }
+    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
+    if (!profile?.is_admin) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
   }
 
   if (request.nextUrl.pathname === '/cuenta' && !user) {

@@ -62,6 +62,11 @@ export function Footer() {
                   Contacto por WhatsApp
                 </a>
               </li>
+              <li>
+                <Link href="/privacidad" className="text-sm text-white/60 hover:text-white transition-colors">
+                  Política de privacidad
+                </Link>
+              </li>
             </ul>
           </div>
 

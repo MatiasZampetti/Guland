@@ -16,6 +16,7 @@ export default function RegistroPage() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [otp, setOtp] = useState('')
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showExistsPopup, setShowExistsPopup] = useState(false)
@@ -200,11 +201,27 @@ export default function RegistroPage() {
             />
           </div>
 
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={privacyAccepted}
+              onChange={(e) => setPrivacyAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 flex-shrink-0 accent-red-600"
+            />
+            <span className="text-xs text-white/50 leading-relaxed">
+              Acepto la{' '}
+              <Link href="/privacidad" target="_blank" className="underline underline-offset-4 hover:text-white transition-colors">
+                política de privacidad
+              </Link>
+              .
+            </span>
+          </label>
+
           {error && <p className="text-xs text-red-500">{error}</p>}
 
           <Button
             type="submit"
-            disabled={loading}
+            disabled={loading || !privacyAccepted}
             className="mt-2 w-full rounded-lg bg-red-700 py-6 text-xs font-bold tracking-widest text-white hover:bg-red-800 disabled:opacity-50"
           >
             {loading ? 'ENVIANDO CÓDIGO...' : 'CREAR CUENTA'}
