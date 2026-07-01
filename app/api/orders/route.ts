@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/supabase/require-admin'
 import { NextResponse } from 'next/server'
 
@@ -7,8 +7,8 @@ export async function GET() {
   const { error: authError } = await requireAdmin()
   if (authError) return authError
 
-  const supabase = await createClient()
-  const { data, error } = await supabase
+  const admin = createAdminClient()
+  const { data, error } = await admin
     .from('orders')
     .select('*, order_items(*)')
     .order('created_at', { ascending: false })
