@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { dbToProduct, type DBProduct } from '@/lib/db-mapper'
+import { dbToProduct, hasStock, inStockSizes, type DBProduct } from '@/lib/db-mapper'
 import { type Product } from '@/types'
 import { Category, Size } from '@/types'
 import { ProductGrid } from '@/components/shop/product-grid'
@@ -49,8 +49,9 @@ function ShopContent() {
   }
 
   const filtered = allProducts.filter((p) => {
+    if (!hasStock(p)) return false
     const matchesCat = selectedCategory ? p.category === selectedCategory : true
-    const matchesSize = selectedSizes.length > 0 ? selectedSizes.some((s) => p.sizes.includes(s)) : true
+    const matchesSize = selectedSizes.length > 0 ? selectedSizes.some((s) => inStockSizes(p).includes(s)) : true
     const matchesFilter =
       selectedFilter === 'destacados' ? !!p.featured :
       selectedFilter === 'new-drops' ? !!p.isNew :

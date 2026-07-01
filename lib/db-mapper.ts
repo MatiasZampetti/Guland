@@ -25,6 +25,18 @@ export interface DBProduct {
   created_at: string
 }
 
+/** Talles con stock > 0. Si el producto no trackea stock, devuelve todos los talles. */
+export function inStockSizes(p: Pick<Product, 'sizes' | 'stock'>): Size[] {
+  const stock = p.stock ?? {}
+  if (Object.keys(stock).length === 0) return p.sizes as Size[]
+  return (p.sizes as Size[]).filter(s => (stock[s] ?? 0) > 0)
+}
+
+/** True si el producto tiene al menos un talle con stock. */
+export function hasStock(p: Pick<Product, 'sizes' | 'stock'>): boolean {
+  return inStockSizes(p).length > 0
+}
+
 export function dbToProduct(p: DBProduct): Product {
   return {
     id: p.id,

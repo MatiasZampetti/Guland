@@ -4,7 +4,7 @@ import { use, useState, useEffect } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
-import { dbToProduct, type DBProduct } from '@/lib/db-mapper'
+import { dbToProduct, inStockSizes, type DBProduct } from '@/lib/db-mapper'
 import { type Product, Size } from '@/types'
 import { ProductGallery } from '@/components/product/product-gallery'
 import { SizeSelector } from '@/components/product/size-selector'
@@ -88,7 +88,7 @@ export default function ProductPage({ params }: Props) {
           <Separator />
 
           <SizeSelector
-            available={product.sizes}
+            available={inStockSizes(product)}
             selected={selectedSize}
             onSelect={setSelectedSize}
             guide={product.sizeGuide}

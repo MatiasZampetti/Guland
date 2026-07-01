@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { notFound } from 'next/navigation'
-import { dbToProduct, type DBProduct } from '@/lib/db-mapper'
+import { dbToProduct, hasStock, inStockSizes, type DBProduct } from '@/lib/db-mapper'
 import { type Product, Category, Size } from '@/types'
 import { ProductGrid } from '@/components/shop/product-grid'
 import { FiltersSidebar } from '@/components/shop/filters-sidebar'
@@ -65,7 +65,8 @@ export default function CategoryPage({ params }: Props) {
   }
 
   const filtered = allProducts.filter((p) => {
-    const matchesSize = selectedSizes.length > 0 ? selectedSizes.some((s) => p.sizes.includes(s)) : true
+    if (!hasStock(p)) return false
+    const matchesSize = selectedSizes.length > 0 ? selectedSizes.some((s) => inStockSizes(p).includes(s)) : true
     const matchesFilter =
       selectedFilter === 'destacados' ? !!p.featured :
       selectedFilter === 'new-drops' ? !!p.isNew :
