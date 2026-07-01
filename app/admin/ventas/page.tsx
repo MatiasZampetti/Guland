@@ -70,15 +70,19 @@ export default function AdminVentasPage() {
   const [stockWarning, setStockWarning] = useState<string | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
 
+  const [cashDiscount, setCashDiscount] = useState(15)
+
   useEffect(() => {
     Promise.all([
       fetch('/api/sales').then(r => r.json()),
       fetch('/api/products').then(r => r.json()),
-    ]).then(([salesData, productsData]) => {
+      fetch('/api/settings').then(r => r.json()),
+    ]).then(([salesData, productsData, settingsData]) => {
       setVentas(Array.isArray(salesData) ? salesData : [])
       setProducts((Array.isArray(productsData) ? productsData : []).map((p: DBProduct) => ({
         id: p.id, name: p.name, price: p.price, sizes: p.sizes, stock: p.stock ?? {},
       })))
+      setCashDiscount(settingsData?.settings?.cashDiscountPercent ?? 15)
       setLoading(false)
     })
   }, [])
@@ -92,6 +96,13 @@ export default function AdminVentasPage() {
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
+
+  function getPrice(base: number, metodo: MetodoPago): number {
+    if (metodo === 'efectivo' || metodo === 'transferencia') {
+      return Math.round(base * (1 - cashDiscount / 100))
+    }
+    return base
+  }
 
   const selectedProduct = products.find((p) => p.id === draft.productoId)
 
@@ -117,7 +128,7 @@ export default function AdminVentasPage() {
       productoNombre: p.name,
       talle: '',
       cantidad: 1,
-      precioUnitario: p.price,
+      precioUnitario: getPrice(p.price, metodoPago),
     })
     setProductSearch(p.name)
     setShowProductDropdown(false)
@@ -272,7 +283,17 @@ export default function AdminVentasPage() {
                   <button
                     key={m}
                     type="button"
-                    onClick={() => setMetodoPago(m)}
+                    onClick={() => {
+                      setMetodoPago(m)
+                      if (draft.productoId) {
+                        const prod = products.find(p => p.id === draft.productoId)
+                        if (prod) setDraft(d => ({ ...d, precioUnitario: getPrice(prod.price, m) }))
+                      }
+                      setCart(prev => prev.map(it => {
+                        const prod = products.find(p => p.id === it.productoId)
+                        return prod ? { ...it, precioUnitario: getPrice(prod.price, m) } : it
+                      }))
+                    }}
                     className={`rounded-lg border px-3.5 py-2 text-xs font-medium transition-colors ${
                       metodoPago === m
                         ? 'border-black bg-black text-white'
@@ -349,7 +370,7 @@ export default function AdminVentasPage() {
                           className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors"
                         >
                           <span className="text-gray-900 truncate">{p.name}</span>
-                          <span className="shrink-0 text-xs font-semibold text-gray-500">${p.price.toLocaleString('es-AR')}</span>
+                          <span className="shrink-0 text-xs font-semibold text-gray-500">${getPrice(p.price, metodoPago).toLocaleString('es-AR')}</span>
                         </button>
                       ))}
                     </div>
