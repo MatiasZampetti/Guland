@@ -11,7 +11,6 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   images: {
-    unoptimized: true, // temporal: cuota de transformaciones de Vercel agotada, revertir el 1° de julio
     remotePatterns: [
       {
         protocol: 'https',
