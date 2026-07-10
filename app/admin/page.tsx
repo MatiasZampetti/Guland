@@ -2,30 +2,30 @@ import Link from 'next/link'
 import { DollarSign, ShoppingCart, TrendingUp, ArrowUpRight } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const statusLabel: Record<string, string> = {
-  pendiente: 'Pendiente',
-  en_proceso: 'En proceso',
-  enviado: 'Enviado',
-  completado: 'Completado',
-  cancelado: 'Cancelado',
-}
-
-const statusColor: Record<string, string> = {
-  pendiente: 'bg-amber-100 text-amber-800',
-  en_proceso: 'bg-blue-100 text-blue-800',
-  enviado: 'bg-purple-100 text-purple-800',
-  completado: 'bg-green-100 text-green-800',
-  cancelado: 'bg-red-100 text-red-800',
-}
-
 const MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+// Colores fijos por categoría (orden estable, no por ranking) — validados con dataviz/validate_palette.js
+const CATEGORY_COLORS = ['#dc2626', '#2563eb', '#d97706', '#059669', '#7c3aed', '#0891b2', '#db2777']
+const OTROS_COLOR = '#9ca3af'
+
+// Genera el path SVG de una porción de torta (centro 80,80 · radio 70)
+function pieSlicePath(startAngle: number, endAngle: number) {
+  const cx = 80, cy = 80, r = 70
+  const point = (a: number) => [cx + r * Math.cos(a), cy + r * Math.sin(a)]
+  const [x1, y1] = point(startAngle)
+  const [x2, y2] = point(endAngle)
+  const largeArc = endAngle - startAngle > Math.PI ? 1 : 0
+  return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`
+}
 
 export default async function AdminPage() {
   const admin = createAdminClient()
 
-  const [{ data: orders }, { data: sales }] = await Promise.all([
-    admin.from('orders').select('id, customer_name, customer_email, total, status, created_at').order('created_at', { ascending: false }),
-    admin.from('sales').select('product_name, quantity, total, created_at'),
+  const [{ data: orders }, { data: sales }, { data: products }, { data: categories }] = await Promise.all([
+    admin.from('orders').select('id, total, created_at').order('created_at', { ascending: false }),
+    admin.from('sales').select('product_id, product_name, quantity, total, created_at'),
+    admin.from('products').select('id, category_slug'),
+    admin.from('categories').select('slug, label').order('created_at', { ascending: true }),
   ])
 
   const now = new Date()
@@ -45,12 +45,14 @@ export default async function AdminPage() {
 
   const ordersThisMonth = (orders ?? []).filter(o => isThisMonth(o.created_at))
   const ordersLastMonth = (orders ?? []).filter(o => isLastMonth(o.created_at))
+  const salesThisMonth = (sales ?? []).filter(s => isThisMonth(s.created_at))
+  const salesLastMonth = (sales ?? []).filter(s => isLastMonth(s.created_at))
 
-  const ingresosMes = ordersThisMonth.reduce((s, o) => s + o.total, 0)
-  const ingresosAnterior = ordersLastMonth.reduce((s, o) => s + o.total, 0)
-  const pedidosMes = ordersThisMonth.length
-  const pedidosAnterior = ordersLastMonth.length
-  const totalAcumulado = (orders ?? []).reduce((s, o) => s + o.total, 0)
+  const ingresosMes = ordersThisMonth.reduce((s, o) => s + o.total, 0) + salesThisMonth.reduce((s, v) => s + v.total, 0)
+  const ingresosAnterior = ordersLastMonth.reduce((s, o) => s + o.total, 0) + salesLastMonth.reduce((s, v) => s + v.total, 0)
+  const pedidosMes = ordersThisMonth.length + salesThisMonth.length
+  const pedidosAnterior = ordersLastMonth.length + salesLastMonth.length
+  const totalAcumulado = (orders ?? []).reduce((s, o) => s + o.total, 0) + (sales ?? []).reduce((s, v) => s + v.total, 0)
 
   const pct = (curr: number, prev: number) => {
     if (prev === 0) return null
@@ -66,7 +68,10 @@ export default async function AdminPage() {
     const yr = d.getFullYear()
     const total = (orders ?? [])
       .filter(o => { const dt = new Date(o.created_at); return dt.getMonth() === mIdx && dt.getFullYear() === yr })
-      .reduce((s, o) => s + o.total, 0)
+      .reduce((s, o) => s + o.total, 0) +
+      (sales ?? [])
+        .filter(v => { const dt = new Date(v.created_at); return dt.getMonth() === mIdx && dt.getFullYear() === yr })
+        .reduce((s, v) => s + v.total, 0)
     return { mes: MONTH_NAMES[mIdx], ventas: total, isCurrent: i === 5 }
   })
   const maxVentas = Math.max(...monthlyData.map(m => m.ventas), 1)
@@ -82,7 +87,29 @@ export default async function AdminPage() {
     .slice(0, 4)
   const maxCount = Math.max(...topProductos.map(p => p.count), 1)
 
-  const recentOrders = (orders ?? []).slice(0, 5)
+  // Ventas por categoría
+  const productCategoryMap = new Map<string, string>()
+  for (const p of products ?? []) productCategoryMap.set(p.id, p.category_slug)
+
+  const categoryQty = new Map<string, number>()
+  for (const s of sales ?? []) {
+    const slug = (s.product_id && productCategoryMap.get(s.product_id)) || 'otros'
+    categoryQty.set(slug, (categoryQty.get(slug) ?? 0) + (s.quantity ?? 1))
+  }
+
+  const ventasPorCategoria = (categories ?? [])
+    .map((c, i) => ({ label: c.label, qty: categoryQty.get(c.slug) ?? 0, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
+    .concat(categoryQty.has('otros') ? [{ label: 'Otros', qty: categoryQty.get('otros')!, color: OTROS_COLOR }] : [])
+    .filter(c => c.qty > 0)
+    .sort((a, b) => b.qty - a.qty)
+  const totalCategoriaQty = ventasPorCategoria.reduce((s, c) => s + c.qty, 0)
+
+  // Ángulos de cada porción (arranca en las 12, sentido horario)
+  const categorySlices = ventasPorCategoria.reduce<Array<typeof ventasPorCategoria[number] & { path: string; pct: number; endAngle: number }>>((acc, c) => {
+    const startAngle = acc.length === 0 ? -Math.PI / 2 : acc[acc.length - 1].endAngle
+    const endAngle = startAngle + (c.qty / totalCategoriaQty) * Math.PI * 2
+    return [...acc, { ...c, path: pieSlicePath(startAngle, endAngle), pct: Math.round((c.qty / totalCategoriaQty) * 100), endAngle }]
+  }, [])
 
   const stats = [
     {
@@ -94,7 +121,7 @@ export default async function AdminPage() {
       iconColor: 'text-red-600',
     },
     {
-      label: 'Pedidos del mes',
+      label: 'Ventas del mes',
       value: pedidosMes,
       change: pct(pedidosMes, pedidosAnterior),
       icon: ShoppingCart,
@@ -234,76 +261,36 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      {/* Últimos pedidos */}
-      <div className="rounded-xl bg-white shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-          <h2 className="text-sm font-semibold text-gray-900">Últimos pedidos</h2>
-          <Link href="/admin/pedidos" className="text-xs font-medium text-gray-400 hover:text-black transition-colors">
-            Ver todos →
-          </Link>
+      {/* Ventas por categoría */}
+      <div className="rounded-xl bg-white p-5 shadow-sm">
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold text-gray-900">Ventas por categoría</h2>
+          <p className="text-xs text-gray-400">Unidades vendidas por categoría</p>
         </div>
 
-        {recentOrders.length === 0 ? (
-          <div className="py-16 text-center text-sm text-gray-400">No hay pedidos aún.</div>
+        {categorySlices.length === 0 ? (
+          <p className="text-sm text-gray-400">Sin ventas aún.</p>
         ) : (
-          <>
-            {/* Mobile cards */}
-            <div className="sm:hidden divide-y divide-gray-50">
-              {recentOrders.map((order) => (
-                <div key={order.id} className="px-5 py-3.5 space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[11px] font-mono text-gray-400">{order.id.slice(0, 8)}</p>
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusColor[order.status]}`}>
-                      {statusLabel[order.status]}
-                    </span>
-                  </div>
-                  <p className="text-sm font-medium text-gray-900">{order.customer_name}</p>
-                  <p className="text-xs text-gray-400">{order.customer_email}</p>
-                  <div className="flex items-center justify-between pt-0.5">
-                    <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleDateString('es-AR')}</p>
-                    <p className="text-sm font-semibold text-gray-900">${order.total.toLocaleString('es-AR')}</p>
-                  </div>
-                </div>
+          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-center">
+            <svg viewBox="0 0 160 160" className="h-44 w-44 shrink-0">
+              {categorySlices.map((c) => (
+                <path key={c.label} d={c.path} fill={c.color}>
+                  <title>{`${c.label}: ${c.qty} uds (${c.pct}%)`}</title>
+                </path>
               ))}
-            </div>
-
-            {/* Desktop table */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-50">
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">ID</th>
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Cliente</th>
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Fecha</th>
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Total</th>
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Estado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {recentOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50/60 transition-colors">
-                      <td className="px-5 py-3.5 text-xs font-mono font-medium text-gray-500">{order.id.slice(0, 8)}</td>
-                      <td className="px-5 py-3.5">
-                        <p className="text-sm font-medium text-gray-900">{order.customer_name}</p>
-                        <p className="text-xs text-gray-400">{order.customer_email}</p>
-                      </td>
-                      <td className="px-5 py-3.5 text-sm text-gray-500">
-                        {new Date(order.created_at).toLocaleDateString('es-AR')}
-                      </td>
-                      <td className="px-5 py-3.5 text-sm font-semibold text-gray-900">
-                        ${order.total.toLocaleString('es-AR')}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusColor[order.status]}`}>
-                          {statusLabel[order.status]}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+            </svg>
+            <ul className="w-full max-w-xs space-y-2.5">
+              {categorySlices.map((c) => (
+                <li key={c.label} className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: c.color }} />
+                    <p className="truncate text-xs font-medium text-gray-700">{c.label}</p>
+                  </div>
+                  <p className="shrink-0 text-xs font-semibold text-gray-900">{c.qty} uds · {c.pct}%</p>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
     </div>
