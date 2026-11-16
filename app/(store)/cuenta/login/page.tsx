@@ -10,7 +10,11 @@ import { CheckCircle, X } from 'lucide-react'
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/'
+  // Solo rutas internas: evita open redirect y `javascript:` (XSS).
+  const rawRedirect = searchParams.get('redirect') || '/'
+  const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') && !rawRedirect.startsWith('/\\')
+    ? rawRedirect
+    : '/'
   const confirmed = searchParams.get('confirmed') === 'true'
   const confirmedEmail = searchParams.get('email') || ''
 

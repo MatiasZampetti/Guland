@@ -13,8 +13,7 @@ create table public.profiles (
 alter table public.profiles enable row level security;
 create policy "Users can read own profile" on public.profiles
   for select using (auth.uid() = id);
-create policy "Users can update own profile" on public.profiles
-  for update using (auth.uid() = id);
+-- Sin política de UPDATE: is_admin solo se cambia vía service role (ver migración 006).
 
 -- Trigger: crear perfil al registrar usuario
 create or replace function public.handle_new_user()
@@ -100,8 +99,6 @@ create policy "Admins can read all orders" on public.orders
   for select using (
     exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
   );
-create policy "Anyone can insert orders" on public.orders
-  for insert with check (true);
 create policy "Admins can update orders" on public.orders
   for update using (
     exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
@@ -126,8 +123,6 @@ create policy "Admins can read all order items" on public.order_items
   for select using (
     exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
   );
-create policy "Anyone can insert order items" on public.order_items
-  for insert with check (true);
 
 -- Sales (ventas manuales desde admin)
 create type payment_method as enum ('efectivo', 'transferencia', 'mercadopago', 'tarjeta');
